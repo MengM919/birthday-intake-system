@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>定制生日网页信息收集系统</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Birthday Page Intake</p>
+          <h1>定制生日网页信息收集系统</h1>
+          <p class="subtle">套餐驱动，只收集当前订单真正需要的信息。</p>
+        </div>
+        <nav class="view-switch" aria-label="视图切换">
+          <button class="view-button active" type="button" data-view="intake">信息收集</button>
+          <button class="view-button" type="button" data-view="admin">商家后台</button>
+        </nav>
+      </header>
+
+      <main>
+        <section class="progress-panel" id="intakeProgress">
+          <div>
+            <p class="eyebrow">自动保存草稿</p>
+            <h2>你的生日礼物已完成 <span id="completionPercent">0%</span></h2>
+          </div>
+          <div class="progress-track" aria-hidden="true"><span id="completionBar"></span></div>
+          <div class="step-pills" id="stepPills" aria-label="步骤进度"></div>
+        </section>
+
+        <section class="view-section" id="intakeView">
+          <form id="orderForm" novalidate>
+            <section class="step-card active" data-step="1">
+              <div class="step-head">
+                <p class="eyebrow">Step 1 / 8</p>
+                <h2>确认订单 / 套餐</h2>
+                <p>选择购买渠道与套餐，系统会自动决定照片上限和需要填写的模块。</p>
+              </div>
+              <div class="field-grid two">
+                <label class="field">购买渠道
+                  <select name="orderChannel" required>
+                    <option value="taobao">淘宝</option>
+                    <option value="xianyu">闲鱼</option>
+                    <option value="wechat">微信</option>
+                    <option value="xiaohongshu">小红书</option>
+                    <option value="other">其他</option>
+                  </select>
+                </label>
+                <label class="field">订单编号（可选）
+                  <input name="orderNo" type="text" placeholder="后续可由订单接口注入">
+                </label>
+                <label class="field">联系方式类型
+                  <select name="contactMethod" required>
+                    <option value="wechat">微信</option>
+                    <option value="phone">手机</option>
+                    <option value="email">邮箱</option>
+                  </select>
+                </label>
+                <label class="field">联系方式
+                  <input name="contactValue" type="text" required placeholder="用于商家确认资料">
+                </label>
+              </div>
+              <div class="plan-grid" id="planGrid"></div>
+            </section>
+
+            <section class="step-card" data-step="2">
+              <div class="step-head">
+                <p class="eyebrow">Step 2 / 8</p>
+                <h2>挑选生日世界</h2>
+                <p>从 11 套真实模板预览图中选择 1 套。点击卡片选中，点“查看大图”可全屏预览。</p>
+              </div>
+              <div class="template-grid" id="templateGrid"></div>
+            </section>
+
+            <section class="step-card" data-step="3">
+              <div class="step-head">
+                <p class="eyebrow">Step 3 / 8</p>
+                <h2>告诉我 TA 是谁</h2>
+                <p>默认是“购买者送给寿星”，文案会以送礼者视角表达。</p>
+              </div>
+              <div class="field-grid two">
+                <label class="field">寿星姓名 / 昵称
+                  <input name="recipientName" maxlength="20" required placeholder="例如 小雨">
+                </label>
+                <label class="field">生日日期
+                  <input name="birthday" type="date" required>
+                </label>
+                <label class="switch-row"><input name="showAge" type="checkbox"> 展示年龄</label>
+                <label class="field">双方关系
+                  <select name="relationshipType" required>
+                    <option value="lover">情侣</option>
+                    <option value="best_friend">闺蜜</option>
+                    <option value="friend">好朋友</option>
+                    <option value="classmate">同学</option>
+                    <option value="family">家人</option>
+                    <option value="other">其他</option>
+                  </select>
+                </label>
+                <label class="field conditional" data-show-when="relationshipType:other">其他关系说明
+                  <input name="relationshipOther" type="text" placeholder="请简单说明双方关系">
+                </label>
+                <label class="field">送礼人昵称
+                  <input name="senderName" maxlength="20" required placeholder="可写昵称">
+                </label>
+                <label class="switch-row"><input name="senderAnonymous" type="checkbox"> 匿名送出</label>
+              </div>
+              <div class="tone-card" id="toneAdvice"></div>
+            </section>
+
+            <section class="step-card" data-step="4">
+              <div class="step-head">
+                <p class="eyebrow">Step 4 / 8</p>
+                <h2>把最好的照片留在这里</h2>
+                <p>封面图 1 张；相册照片按套餐限制。支持 JPG、PNG、WEBP，单张不超过 15MB。</p>
+              </div>
+              <div class="upload-layout">
+                <div class="upload-box" id="coverDrop">
+                  <input id="coverInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+                  <button type="button" class="upload-trigger" data-file-target="coverInput">上传封面图</button>
+                  <p>建议主体清晰、面部无遮挡。多人照片请让寿星更突出。</p>
+                  <div class="cover-preview" id="coverPreview"></div>
+                </div>
+                <div class="upload-box" id="galleryDrop">
+                  <input id="galleryInput" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+                  <button type="button" class="upload-trigger" data-file-target="galleryInput">上传回忆照片</button>
+                  <p id="galleryLimitText">已上传 0 / 5</p>
+                  <div class="photo-list" id="galleryList"></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="step-card" data-step="5">
+              <div class="step-head">
+                <p class="eyebrow">Step 5 / 8</p>
+                <h2>把想说的话送给 TA</h2>
+                <p>先写真实事实要点，再用 AI 辅助 mock 生成候选文案；所有内容都可手动编辑。</p>
+              </div>
+              <div class="field-grid">
+                <label class="field">首页主祝福
+                  <textarea name="headline" required maxlength="80" placeholder="建议 12–50 字，例如：把今天所有偏爱和祝福都送给你"></textarea>
+                </label>
+                <label class="field">长祝福（可选）
+                  <textarea name="longMessage" maxlength="800" placeholder="写给 TA 的长一点的话"></textarea>
+                </label>
+                <label class="field">祝福署名
+                  <input name="signature" type="text" placeholder="可默认使用送礼人昵称">
+                </label>
+              </div>
+              <div class="ai-helper">
+                <label class="field">事实要点
+                  <textarea name="aiFacts" placeholder="例如：大学室友、认识三年、喜欢旅游、准备考研"></textarea>
+                </label>
+                <label class="field">语气
+                  <select name="aiTone">
+                    <option value="warm">温柔</option>
+                    <option value="bright">活泼</option>
+                    <option value="cool">甜酷</option>
+                    <option value="restrained">克制</option>
+                    <option value="romantic">浪漫</option>
+                    <option value="sincere">真诚</option>
+                  </select>
+                </label>
+                <button class="secondary-button" id="generateBlessing" type="button">生成 3 个候选文案</button>
+                <div class="candidate-list" id="blessingCandidates"></div>
+              </div>
+            </section>
+
+            <section class="step-card" data-step="6">
+              <div class="step-head">
+                <p class="eyebrow">Step 6 / 8</p>
+                <h2>选择属于 TA 的生日惊喜</h2>
+                <p id="moduleRuleText">系统会根据套餐自动显示模块。</p>
+              </div>
+              <div class="module-grid" id="moduleGrid"></div>
+              <div class="module-fields" id="moduleFields"></div>
+            </section>
+
+            <section class="step-card" data-step="7">
+              <div class="step-head">
+                <p class="eyebrow">Step 7 / 8</p>
+                <h2>最后一点细节</h2>
+                <p>音乐、分享和隐私偏好会进入最终订单 JSON。</p>
+              </div>
+              <div class="field-grid two">
+                <label class="field">背景音乐方式
+                  <select name="bgmMode" required>
+                    <option value="library">推荐歌库</option>
+                    <option value="manual">填写歌曲</option>
+                    <option value="upload">上传音频</option>
+                  </select>
+                </label>
+                <label class="field conditional" data-show-when="bgmMode:library">推荐音乐 ID
+                  <select name="musicId">
+                    <option value="music_soft_001">温柔生日 BGM</option>
+                    <option value="music_party_002">派对高光 BGM</option>
+                    <option value="music_starry_003">星夜许愿 BGM</option>
+                  </select>
+                </label>
+                <label class="field conditional" data-show-when="bgmMode:manual">歌曲名
+                  <input name="songName" type="text" placeholder="只保存信息，不自动抓取音源">
+                </label>
+                <label class="field conditional" data-show-when="bgmMode:manual">歌手
+                  <input name="artist" type="text">
+                </label>
+                <label class="field conditional" data-show-when="bgmMode:upload">上传音频文件名
+                  <input name="uploadedAudioName" type="text" placeholder="MVP 仅记录文件名或后续 Storage URL">
+                </label>
+                <label class="switch-row"><input name="allowShare" type="checkbox" checked> 允许收礼人转发网页</label>
+                <label class="switch-row"><input name="showSenderName" type="checkbox" checked> 展示送礼人姓名</label>
+                <label class="switch-row"><input name="allowIndexing" type="checkbox"> 允许搜索引擎收录</label>
+                <label class="field">页面访问方式
+                  <select name="pageVisibility">
+                    <option value="unlisted">不公开索引链接</option>
+                    <option value="password">密码访问（后续）</option>
+                  </select>
+                </label>
+              </div>
+              <label class="confirm-row"><input name="privacyConfirmed" type="checkbox" required> 我已确认：页面资料将用于生成生日网页，默认不允许搜索引擎收录，并支持后续申请删除。</label>
+            </section>
+
+            <section class="step-card" data-step="8">
+              <div class="step-head">
+                <p class="eyebrow">Step 8 / 8</p>
+                <h2>确认这份生日礼物</h2>
+                <p>提交前请检查摘要。缺项和风险会显示在这里。</p>
+              </div>
+              <div class="review-grid" id="reviewSummary"></div>
+              <div class="notice-list" id="reviewNotices"></div>
+              <button class="primary-button wide" id="submitOrder" type="button">提交并生成标准 JSON</button>
+              <div class="json-output" id="jsonOutput" hidden>
+                <div class="json-actions">
+                  <strong>标准订单 JSON</strong>
+                  <button type="button" class="secondary-button" id="copyJson">复制 JSON</button>
+                </div>
+                <pre id="jsonPreview"></pre>
+              </div>
+            </section>
+
+            <div class="bottom-actions">
+              <button class="secondary-button" id="prevStep" type="button">上一步</button>
+              <button class="primary-button" id="nextStep" type="button">继续</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view-section hidden" id="adminView">
+          <div class="admin-gate" id="adminGate">
+            <p class="eyebrow">Local Mock Admin</p>
+            <h2>商家后台</h2>
+            <p>阶段 1 是本地 Mock。真实上线需改为 Supabase Auth 或服务端环境变量密码。</p>
+            <label class="field">后台演示密码
+              <input id="adminPassword" type="password" placeholder="输入 demo-admin">
+            </label>
+            <button class="primary-button" id="unlockAdmin" type="button">进入后台</button>
+          </div>
+          <div class="admin-panel hidden" id="adminPanel">
+            <div class="admin-toolbar">
+              <div>
+                <p class="eyebrow">订单管理</p>
+                <h2>本地订单列表</h2>
+              </div>
+              <button class="secondary-button" id="exportAllOrders" type="button">导出全部 JSON</button>
+            </div>
+            <div class="filter-row">
+              <input id="adminSearch" type="search" placeholder="搜索订单号、寿星、联系方式">
+              <select id="adminStatusFilter">
+                <option value="">全部状态</option>
+                <option value="submitted">submitted</option>
+                <option value="needs_revision">needs_revision</option>
+                <option value="approved">approved</option>
+              </select>
+              <select id="adminPlanFilter"><option value="">全部套餐</option></select>
+              <select id="adminTemplateFilter"><option value="">全部模板</option></select>
+            </div>
+            <div class="admin-layout">
+              <div class="order-list" id="adminOrderList"></div>
+              <div class="order-detail" id="adminOrderDetail"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="templatePreviewDialog" class="preview-dialog">
+      <button class="modal-close" id="closeTemplatePreview" type="button" aria-label="关闭预览">×</button>
+      <img id="templatePreviewImage" alt="模板预览大图">
+      <div class="preview-caption" id="templatePreviewCaption"></div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="config/plans.js"></script>
+    <script src="config/templates.js"></script>
+    <script src="config/modules.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
