@@ -1,0 +1,90 @@
+{
+  "orderId": "BD-EXAMPLE-001",
+  "status": "submitted",
+  "source": "local-mock",
+  "createdAt": "2026-07-10T00:00:00.000Z",
+  "updatedAt": "2026-07-10T00:00:00.000Z",
+  "plan": {
+    "id": "P02",
+    "name": "心动版",
+    "priceCny": 16.9,
+    "galleryLimit": 12
+  },
+  "template": {
+    "id": "T08",
+    "name": "Dear You"
+  },
+  "order": {
+    "orderChannel": "taobao",
+    "orderNo": "TB202607100001",
+    "contactMethod": "wechat",
+    "contactValue": "customer-wechat-id"
+  },
+  "recipient": {
+    "recipientName": "小雨",
+    "birthday": "2005-08-16",
+    "showAge": false,
+    "relationshipType": "best_friend",
+    "relationshipOther": "",
+    "birthdayCountdown": {
+      "targetDate": "2026-08-16",
+      "targetYear": 2026,
+      "days": 37
+    }
+  },
+  "sender": {
+    "senderName": "阿晴",
+    "senderAnonymous": false
+  },
+  "content": {
+    "headline": "把今天所有偏爱和祝福都送给你",
+    "longMessage": "愿你的新一岁继续明亮、勇敢、被爱包围。",
+    "signature": "阿晴",
+    "aiFacts": "大学室友，认识三年，一起准备考研。",
+    "aiTone": "warm"
+  },
+  "media": {
+    "cover": {
+      "name": "cover.jpg",
+      "storageUrl": "phase-2-will-use-supabase-storage"
+    },
+    "gallery": [
+      {
+        "name": "memory-01.jpg",
+        "storageUrl": "phase-2-will-use-supabase-storage"
+      }
+    ]
+  },
+  "music": {
+    "bgmMode": "library",
+    "musicId": "music_soft_001"
+  },
+  "selectedModules": [
+    "gallery",
+    "bgm",
+    "countdown",
+    "messageWall",
+    "wishBottle"
+  ],
+  "moduleData": {
+    "messageWall": [
+      {
+        "author": "阿晴",
+        "text": "生日快乐，愿你永远闪闪发光。"
+      }
+    ],
+    "wishBottle": {
+      "title": "生日愿望瓶",
+      "prompt": "把今年最想实现的小愿望放进瓶子里",
+      "wishCount": 3,
+      "isPublic": false
+    }
+  },
+  "privacy": {
+    "allowShare": true,
+    "showSenderName": true,
+    "allowIndexing": false,
+    "pageVisibility": "unlisted",
+    "privacyConfirmed": true
+  }
+}

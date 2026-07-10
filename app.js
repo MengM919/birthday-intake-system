@@ -81,17 +81,25 @@
   };
 
   function init() {
-    restoreDraft();
-    normalizeState();
-    bindEvents();
-    renderPlans();
-    renderTemplates();
-    syncFormFromState();
-    setStep(state.currentStep);
-    renderUploads();
-    renderModules();
-    renderProgress();
-    renderAdminFilters();
+    try {
+      restoreDraft();
+      normalizeState();
+      bindEvents();
+      renderPlans();
+      renderTemplates();
+      syncFormFromState();
+      setStep(state.currentStep);
+      renderUploads();
+      renderModules();
+      renderProgress();
+      renderAdminFilters();
+    } catch (error) {
+      console.error("Birthday intake system initialization failed:", error);
+      alert(
+        "页面初始化失败，请检查配置文件是否完整。错误信息：" +
+        error.message
+      );
+    }
   }
 
   function bindEvents() {
@@ -200,8 +208,8 @@
   }
 
   function normalizeState() {
-    if (!plans.some((plan) => plan.id === state.planId)) state.planId = plans[0]?.id || "P01";
-    if (!templates.some((template) => template.id === state.templateId)) state.templateId = templates[0]?.id || "T01";
+    if (!plans.some((plan) => plan.id === state.planId)) state.planId = plans[0] ? plans[0].id : "P01";
+    if (!templates.some((template) => template.id === state.templateId)) state.templateId = templates[0] ? templates[0].id : "T01";
     if (!state.selectedOptionalModules.length) state.selectedOptionalModules = defaultOptionalModules();
     Object.keys(defaults).forEach((key) => {
       if (state.modules[key] === undefined) state.modules[key] = clone(defaults[key]);
@@ -209,10 +217,20 @@
   }
 
   function currentPlan() {
+    if (!plans.length) {
+      throw new Error(
+        "套餐配置未加载，请检查 config/plans.js 是否存在并正确设置 window.BD_PLANS"
+      );
+    }
     return plans.find((plan) => plan.id === state.planId) || plans[0];
   }
 
   function currentTemplate() {
+    if (!templates.length) {
+      throw new Error(
+        "模板配置未加载，请检查 config/templates.js 是否存在并正确设置 window.BD_TEMPLATES"
+      );
+    }
     return templates.find((template) => template.id === state.templateId) || templates[0];
   }
 
@@ -768,7 +786,7 @@
       ["倒计时", countdown ? `${countdown.targetYear} 年生日还有 ${countdown.days} 天` : "未填写生日"],
       ["封面图", state.media.cover ? state.media.cover.name : "未上传"],
       ["相册", `${state.media.gallery.length} / ${plan.galleryLimit}`],
-      ["已开模块", activeModuleIds().map((id) => moduleCatalog[id]?.name || id).join("、")]
+      ["已开模块", activeModuleIds().map((id) => moduleCatalog[id] ? moduleCatalog[id].name : id).join("、")]
     ].map(([label, value]) => `<div><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`).join("");
 
     const notices = validateOrder(false);
@@ -892,10 +910,14 @@
   }
 
   function renderAdminOrders() {
-    const query = ($("#adminSearch")?.value || "").trim().toLowerCase();
-    const status = $("#adminStatusFilter")?.value || "";
-    const plan = $("#adminPlanFilter")?.value || "";
-    const template = $("#adminTemplateFilter")?.value || "";
+    const adminSearch = $("#adminSearch");
+    const adminStatusFilter = $("#adminStatusFilter");
+    const adminPlanFilter = $("#adminPlanFilter");
+    const adminTemplateFilter = $("#adminTemplateFilter");
+    const query = (adminSearch ? adminSearch.value : "").trim().toLowerCase();
+    const status = adminStatusFilter ? adminStatusFilter.value : "";
+    const plan = adminPlanFilter ? adminPlanFilter.value : "";
+    const template = adminTemplateFilter ? adminTemplateFilter.value : "";
     const orders = readOrders().filter((order) => {
       const text = `${order.orderId} ${order.recipient.recipientName} ${order.order.contactValue}`.toLowerCase();
       return (!query || text.includes(query))
@@ -961,7 +983,11 @@
 
   function copyJson() {
     const text = $("#jsonPreview").textContent;
-    navigator.clipboard?.writeText(text).then(() => showToast("JSON 已复制"));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showToast("JSON 已复制"));
+    } else {
+      showToast("当前浏览器不支持一键复制，可长按选择 JSON");
+    }
   }
 
   function openTemplatePreview(templateId) {
@@ -969,7 +995,9 @@
     if (!template) return;
     $("#templatePreviewImage").src = template.previewImage;
     $("#templatePreviewCaption").textContent = `${template.id} ${template.name} · ${template.description}`;
-    $("#templatePreviewDialog").showModal();
+    const dialog = $("#templatePreviewDialog");
+    if (dialog.showModal) dialog.showModal();
+    else dialog.setAttribute("open", "open");
   }
 
   function persistDraft() {
@@ -1008,16 +1036,16 @@
   }
 
   function escapeHTML(value) {
-    return String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll("\"", "&quot;")
-      .replaceAll("'", "&#039;");
+    return String(value == null ? "" : value)
+      .split("&").join("&amp;")
+      .split("<").join("&lt;")
+      .split(">").join("&gt;")
+      .split("\"").join("&quot;")
+      .split("'").join("&#039;");
   }
 
   function escapeAttr(value) {
-    return escapeHTML(value).replaceAll("\n", " ");
+    return escapeHTML(value).split("\n").join(" ");
   }
 
   function showToast(message) {
