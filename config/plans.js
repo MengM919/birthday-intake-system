@@ -19,7 +19,7 @@ window.BD_PLANS = [
     optionalPickCount: 2,
     allowMultiContributor: false,
     priorityProduction: false,
-    summary: "基础内容 + 留言墙 / 许愿瓶 / 好友盲盒三选二"
+    summary: "基础内容 + 留言墙 / 许愿瓶 / 惊喜盲盒三选二"
   },
   {
     id: "P03",

@@ -69,7 +69,7 @@
       wishCount: 3,
       isPublic: false
     },
-    surpriseBox: [{ title: "来自朋友的惊喜", content: "", openAt: "birthday" }],
+    surpriseBox: [{ title: "来自朋友的惊喜", content: "", openAt: "birthday", motif: "cat" }],
     playlist: [{ song: "", artist: "", reason: "" }],
     partyChecklist: ["拍一张合照", "唱生日歌", "许下生日愿望"],
     hiddenEgg: { trigger: "longPress", title: "隐藏祝福", content: "" },
@@ -398,7 +398,7 @@
       { label: "音乐", done: hasMusicInfo() },
       { label: "隐私确认", done: Boolean(state.privacy.privacyConfirmed) },
       { label: "留言墙", done: !modules.includes("messageWall") || hasAnyText(state.modules.messageWall, "text") },
-      { label: "盲盒", done: !modules.includes("surpriseBox") || hasAnyText(state.modules.surpriseBox, "content") },
+      { label: "惊喜盲盒", done: !modules.includes("surpriseBox") || hasAnyText(state.modules.surpriseBox, "content") },
       { label: "歌单", done: !modules.includes("playlist") || hasAnyText(state.modules.playlist, "song") },
       { label: "清单", done: !modules.includes("partyChecklist") || state.modules.partyChecklist.some(Boolean) },
       { label: "彩蛋", done: !modules.includes("hiddenEgg") || Boolean(state.modules.hiddenEgg.content.trim()) }
@@ -593,11 +593,7 @@
       ]);
     }
     if (id === "surpriseBox") {
-      return renderObjectList(id, data, [
-        ["title", "盲盒标题", "例如 来自室友的悄悄话"],
-        ["content", "盲盒内容", "打开后看到的惊喜"],
-        ["openAt", "开启时间", "birthday"]
-      ]);
+      return renderSurpriseBoxList(id, data);
     }
     if (id === "playlist") {
       return renderObjectList(id, data, [
@@ -670,6 +666,69 @@
     <button type="button" class="secondary-button" data-module-add="${moduleId}">添加一条</button>`;
   }
 
+  function surpriseMotifMeta(value) {
+    const map = {
+      cat: { title: "小猫", className: "motif-cat", visual: "小猫", hint: "打开盲盒时，页面以柔软、贴近、陪伴感的动效呈现。" },
+      fireworks: { title: "烟花", className: "motif-fireworks", visual: "烟花", hint: "打开盲盒时，页面以高光、庆祝、绽放感的动效呈现。" },
+      flowers: { title: "鲜花", className: "motif-flowers", visual: "鲜花", hint: "打开盲盒时，页面以花束、花瓣、温柔盛放感呈现。" },
+      stars: { title: "星光", className: "motif-stars", visual: "星光", hint: "打开盲盒时，页面以闪光、星夜、许愿感呈现。" },
+      ocean: { title: "海浪", className: "motif-ocean", visual: "海浪", hint: "打开盲盒时，页面以夏日、海风、松弛感呈现。" },
+      gift: { title: "礼物", className: "motif-gift", visual: "礼物", hint: "打开盲盒时，页面以礼盒开启、惊喜揭晓感呈现。" }
+    };
+    return map[value] || map.cat;
+  }
+
+  function surpriseMotifOptions(selected) {
+    const options = [
+      ["cat", "小猫"],
+      ["fireworks", "烟花"],
+      ["flowers", "鲜花"],
+      ["stars", "星光"],
+      ["ocean", "海浪"],
+      ["gift", "礼物"]
+    ];
+    return options.map(([value, label]) => `<option value="${escapeAttr(value)}" ${selected === value ? "selected" : ""}>${escapeHTML(label)}</option>`).join("");
+  }
+
+  function renderSurpriseBoxList(moduleId, list) {
+    return `<div class="repeat-list">${list.map((item, index) => {
+      if (!item.motif) item.motif = "cat";
+      const motif = surpriseMotifMeta(item.motif);
+      return `
+        <div class="repeat-item surprise-item">
+          ${inputFor(moduleId, "title", "盲盒标题", item.title, "text", index)}
+          ${textareaFor(moduleId, "content", "盲盒内容", item.content, index, "打开后看到的惊喜、祝福或好友留言")}
+          <label class="field">打开意象
+            <select data-module-field="${moduleId}" data-key="motif" data-index="${index}">
+              ${surpriseMotifOptions(item.motif)}
+            </select>
+          </label>
+          <div class="motif-preview ${motif.className}" data-motif-preview>
+            <div class="motif-visual" aria-hidden="true">${escapeHTML(motif.visual)}</div>
+            <div><strong>${escapeHTML(motif.title)}沉浸式打开</strong><p>${escapeHTML(motif.hint)}</p></div>
+          </div>
+          ${inputFor(moduleId, "openAt", "开启时间", item.openAt || "birthday", "text", index)}
+          <button type="button" class="text-button danger" data-module-remove="${moduleId}" data-index="${index}">删除这一条</button>
+        </div>
+      `;
+    }).join("")}</div>
+    <button type="button" class="secondary-button" data-module-add="${moduleId}">添加一条</button>`;
+  }
+
+  function updateSurpriseMotifPreview(container, value) {
+    if (!container) return;
+    const preview = container.querySelector("[data-motif-preview]");
+    if (!preview) return;
+    const motif = surpriseMotifMeta(value);
+    preview.className = "motif-preview " + motif.className;
+    const visual = preview.querySelector(".motif-visual");
+    const title = preview.querySelector("strong");
+    const text = preview.querySelector("p");
+    if (visual) visual.textContent = motif.visual;
+    if (title) title.textContent = motif.title + "沉浸式打开";
+    if (text) text.textContent = motif.hint;
+  }
+
   function renderStringList(moduleId, list, label) {
     return `<div class="repeat-list">${list.map((value, index) => `
       <div class="repeat-item">
@@ -717,6 +776,9 @@
     } else {
       state.modules[moduleId][key] = key === "wishCount" ? Number(value) : value;
     }
+    if (moduleId === "surpriseBox" && key === "motif") {
+      updateSurpriseMotifPreview(field.closest(".repeat-item"), value);
+    }
     renderProgress();
     persistDraft();
   }
@@ -746,7 +808,7 @@
 
   function addModuleItem(id) {
     if (id === "messageWall") state.modules[id].push({ author: "", text: "" });
-    if (id === "surpriseBox") state.modules[id].push({ title: "", content: "", openAt: "birthday" });
+    if (id === "surpriseBox") state.modules[id].push({ title: "", content: "", openAt: "birthday", motif: "cat" });
     if (id === "playlist") state.modules[id].push({ song: "", artist: "", reason: "" });
     if (id === "birthdayMap") state.modules[id].push({ place: "", story: "", link: "" });
     if (id === "giftVote" && state.modules[id].length < 6) state.modules[id].push({ name: "", reason: "" });
@@ -755,20 +817,41 @@
 
   function generateBlessings() {
     const name = state.recipient.recipientName || "TA";
-    const facts = state.content.aiFacts || "你值得所有明亮又温柔的瞬间";
-    const tones = {
-      warm: ["把今天所有偏爱和祝福都送给你", "愿这一岁的你，被温柔和好运稳稳接住", `生日快乐，${name}，你一直值得被认真偏爱`],
-      bright: [`今天的主角就是 ${name}`, "这一页的快乐、惊喜和爱都为你闪亮", "生日快乐，愿你每天都比今天更开心"],
-      cool: ["把全世界的浪漫和闪耀都画给你", "今天不讲道理，所有偏爱都属于你", `生日快乐，${name}，继续漂亮地发光吧`],
-      restrained: ["愿你拥有平静而明亮的新一岁", "把认真准备的祝福，送给特别的你", `生日快乐，${name}，愿你所行皆顺`],
-      romantic: ["你是我心里最特别的星", "把漫天星河和偏爱都送给你", `生日快乐，${name}，爱意在今天有了名字`],
-      sincere: [`生日快乐，${name}，谢谢你出现在我的生命里`, "愿你的新一岁，有热爱、有底气、有自由", "这份祝福不夸张，只是真的希望你快乐"]
+    const facts = (state.content.aiFacts || "").trim();
+    const factsField = $('[name="aiFacts"]');
+    if (!facts) {
+      showToast("先写一点 TA 的情况，再生成候选文案");
+      if (factsField) factsField.focus();
+      return;
+    }
+    const relationMap = {
+      lover: "恋人",
+      best_friend: "闺蜜",
+      friend: "朋友",
+      classmate: "同学",
+      family: "家人",
+      other: state.recipient.relationshipOther || "特别的人"
     };
-    const chosen = tones[state.content.aiTone] || tones.warm;
+    const toneMap = {
+      warm: "温柔",
+      bright: "活泼",
+      cool: "甜酷",
+      restrained: "克制高级",
+      romantic: "浪漫",
+      sincere: "真诚"
+    };
+    const relation = relationMap[state.recipient.relationshipType] || "朋友";
+    const tone = toneMap[state.content.aiTone] || "温柔";
+    const shortFacts = facts.length > 46 ? facts.slice(0, 46) + "…" : facts;
+    const chosen = [
+      `生日快乐，${name}。因为${shortFacts}，所以今天这份${tone}的偏爱只想送给你。`,
+      `把今天所有祝福都送给${name}，愿你作为我很重要的${relation}，新一岁继续被爱、被好运接住。`,
+      `这一天属于${name}，也属于那些关于“${shortFacts}”的美好回忆。愿你一直闪闪发光。`
+    ];
     $("#blessingCandidates").innerHTML = chosen.map((text, index) => `
       <article>
         <span>候选 ${index + 1}</span>
-        <p>${escapeHTML(text)}。${escapeHTML(facts).slice(0, 36)}</p>
+        <p>${escapeHTML(text)}</p>
         <button type="button" class="secondary-button" data-use-blessing="${escapeAttr(text)}">使用这句</button>
       </article>
     `).join("");
@@ -813,7 +896,7 @@
     }
     const modules = activeModuleIds();
     if (modules.includes("messageWall") && !hasAnyText(state.modules.messageWall, "text")) notices.push("留言墙至少需要 1 条留言内容。");
-    if (modules.includes("surpriseBox") && !hasAnyText(state.modules.surpriseBox, "content")) notices.push("好友盲盒至少需要 1 条惊喜内容。");
+    if (modules.includes("surpriseBox") && !hasAnyText(state.modules.surpriseBox, "content")) notices.push("惊喜盲盒至少需要 1 条惊喜内容。");
     if (modules.includes("playlist") && !hasAnyText(state.modules.playlist, "song")) notices.push("生日歌单至少需要 1 首歌曲。");
     if (modules.includes("hiddenEgg") && !state.modules.hiddenEgg.content.trim()) notices.push("隐藏彩蛋需要填写彩蛋内容。");
     if (strict && notices.length) showToast(notices[0]);

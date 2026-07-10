@@ -136,24 +136,36 @@
               <div class="step-head">
                 <p class="eyebrow">Step 5 / 8</p>
                 <h2>把想说的话送给 TA</h2>
-                <p>先写真实事实要点，再用 AI 辅助 mock 生成候选文案；所有内容都可手动编辑。</p>
+                <p>先自己写祝福；如果不想自定义，再根据 TA 的情况生成 3 个候选文案。</p>
               </div>
-              <div class="field-grid">
-                <label class="field">首页主祝福
-                  <textarea name="headline" required maxlength="80" placeholder="建议 12–50 字，例如：把今天所有偏爱和祝福都送给你"></textarea>
-                </label>
-                <label class="field">长祝福（可选）
-                  <textarea name="longMessage" maxlength="800" placeholder="写给 TA 的长一点的话"></textarea>
-                </label>
-                <label class="field">祝福署名
-                  <input name="signature" type="text" placeholder="可默认使用送礼人昵称">
-                </label>
+              <div class="copy-mode-panel">
+                <div class="mode-heading">
+                  <span>方式一</span>
+                  <h3>自定义祝福</h3>
+                  <p>这里是主要填写区。已经想好文案时，直接写完继续即可。</p>
+                </div>
+                <div class="field-grid">
+                  <label class="field">首页主祝福
+                    <textarea name="headline" required maxlength="80" placeholder="例如：把今天所有偏爱和祝福都送给你"></textarea>
+                  </label>
+                  <label class="field">长祝福（可选）
+                    <textarea name="longMessage" maxlength="800" placeholder="写给 TA 的长一点的话，可以记录关系、回忆、祝愿"></textarea>
+                  </label>
+                  <label class="field">祝福署名
+                    <input name="signature" type="text" placeholder="可默认使用送礼人昵称">
+                  </label>
+                </div>
               </div>
               <div class="ai-helper">
-                <label class="field">事实要点
-                  <textarea name="aiFacts" placeholder="例如：大学室友、认识三年、喜欢旅游、准备考研"></textarea>
+                <div class="mode-heading">
+                  <span>方式二</span>
+                  <h3>不自定义时生成候选</h3>
+                  <p>先写 TA 的情况，系统再给出 3 个候选。点击候选后会填入上面的首页主祝福。</p>
+                </div>
+                <label class="field">TA 的情况 / 关键词
+                  <textarea name="aiFacts" placeholder="例如：大学室友、认识三年、喜欢旅游、最近在准备考研、性格很温柔"></textarea>
                 </label>
-                <label class="field">语气
+                <label class="field">想要的语气
                   <select name="aiTone">
                     <option value="warm">温柔</option>
                     <option value="bright">活泼</option>
@@ -163,7 +175,7 @@
                     <option value="sincere">真诚</option>
                   </select>
                 </label>
-                <button class="secondary-button" id="generateBlessing" type="button">生成 3 个候选文案</button>
+                <button class="secondary-button" id="generateBlessing" type="button">我不自定义，生成 3 个候选文案</button>
                 <div class="candidate-list" id="blessingCandidates"></div>
               </div>
             </section>
@@ -182,7 +194,7 @@
               <div class="step-head">
                 <p class="eyebrow">Step 7 / 8</p>
                 <h2>最后一点细节</h2>
-                <p>音乐、分享和隐私偏好会进入最终订单 JSON。</p>
+                <p>默认公开链接可转发，但不公开索引，也不允许搜索引擎收录。</p>
               </div>
               <div class="field-grid two">
                 <label class="field">背景音乐方式
@@ -208,12 +220,12 @@
                 <label class="field conditional" data-show-when="bgmMode:upload">上传音频文件名
                   <input name="uploadedAudioName" type="text" placeholder="MVP 仅记录文件名或后续 Storage URL">
                 </label>
-                <label class="switch-row"><input name="allowShare" type="checkbox" checked> 允许收礼人转发网页</label>
+                <label class="switch-row"><input name="allowShare" type="checkbox" checked> 允许送礼人转发网页（网页公开）</label>
                 <label class="switch-row"><input name="showSenderName" type="checkbox" checked> 展示送礼人姓名</label>
-                <label class="switch-row"><input name="allowIndexing" type="checkbox"> 允许搜索引擎收录</label>
+                <label class="switch-row"><input name="allowIndexing" type="checkbox"> 允许搜索引擎收录（默认不允许）</label>
                 <label class="field">页面访问方式
                   <select name="pageVisibility">
-                    <option value="unlisted">不公开索引链接</option>
+                    <option value="unlisted">公开链接，但不公开索引</option>
                     <option value="password">密码访问（后续）</option>
                   </select>
                 </label>
@@ -294,6 +306,6 @@
     <script src="config/plans.js"></script>
     <script src="config/templates.js"></script>
     <script src="config/modules.js"></script>
-    <script src="app.js?v=20260710-mobile-fix"></script>
+    <script src="app.js?v=20260710-flow-motif"></script>
   </body>
 </html>

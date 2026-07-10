@@ -4,7 +4,7 @@ window.BD_MODULES = {
   countdown: { id: "countdown", name: "生日倒计时", short: "由生日自动生成", required: true },
   messageWall: { id: "messageWall", name: "留言墙", short: "留言、署名、可选照片", required: false },
   wishBottle: { id: "wishBottle", name: "许愿瓶", short: "标题、提示语、愿望数量、隐私", required: false },
-  surpriseBox: { id: "surpriseBox", name: "好友盲盒", short: "标题、内容、开启时间", required: false },
+  surpriseBox: { id: "surpriseBox", name: "惊喜盲盒", short: "内容、开启时间、打开意象", required: false },
   playlist: { id: "playlist", name: "生日歌单", short: "最多 10 首歌和推荐理由", required: false },
   partyChecklist: { id: "partyChecklist", name: "派对清单", short: "3–10 个生日任务", required: false },
   hiddenEgg: { id: "hiddenEgg", name: "隐藏彩蛋", short: "触发方式、标题、内容", required: false },
