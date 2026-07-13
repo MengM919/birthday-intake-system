@@ -4,6 +4,7 @@
   const plans = window.BD_PLANS || [];
   const templates = window.BD_TEMPLATES || [];
   const moduleCatalog = window.BD_MODULES || {};
+  const imageryCatalog = window.BD_IMAGERY || [];
   const draftKey = "bd_intake_draft_v1";
   const ordersKey = "bd_intake_orders_v1";
   const adminPassword = "demo-admin";
@@ -69,7 +70,7 @@
       wishCount: 3,
       isPublic: false
     },
-    surpriseBox: [{ title: "来自朋友的惊喜", content: "", openAt: "birthday", motif: "cat" }],
+    surpriseBox: [createSurpriseBoxConfig()],
     playlist: [{ song: "", artist: "", reason: "" }],
     partyChecklist: ["拍一张合照", "唱生日歌", "许下生日愿望"],
     hiddenEgg: { trigger: "longPress", title: "隐藏祝福", content: "" },
@@ -214,6 +215,75 @@
     Object.keys(defaults).forEach((key) => {
       if (state.modules[key] === undefined) state.modules[key] = clone(defaults[key]);
     });
+    normalizeSurpriseBoxState();
+  }
+
+  function allImagery() {
+    if (Array.isArray(imageryCatalog) && imageryCatalog.length) return imageryCatalog;
+    return [
+      { id: "kitten", name: "小猫", short: "几只小猫偷偷来陪 TA 过生日。", preview: "assets/imagery/kitten/preview.webp", defaultDuration: 6, renderer: "kittenRenderer" },
+      { id: "fireworks", name: "烟花", short: "让整个页面为 TA 盛大绽放。", preview: "assets/imagery/fireworks/preview.webp", defaultDuration: 6, renderer: "fireworksRenderer" },
+      { id: "flowers", name: "鲜花", short: "让鲜花从页面四周慢慢把 TA 包围。", preview: "assets/imagery/flowers/preview.webp", defaultDuration: 7, renderer: "flowersRenderer" },
+      { id: "stars", name: "星星", short: "今晚所有星光都落向 TA。", preview: "assets/imagery/stars/preview.webp", defaultDuration: 6, renderer: "starsRenderer" },
+      { id: "butterflies", name: "蝴蝶", short: "几只蝴蝶轻轻飞过，像祝福抵达。", preview: "assets/imagery/butterflies/preview.webp", defaultDuration: 7, renderer: "butterfliesRenderer" },
+      { id: "balloons", name: "生日气球", short: "高质感气球和丝带慢慢升起。", preview: "assets/imagery/balloons/preview.webp", defaultDuration: 6, renderer: "balloonsRenderer" },
+      { id: "ocean", name: "海浪", short: "夏日海浪、光影和治愈气泡涌来。", preview: "assets/imagery/ocean/preview.webp", defaultDuration: 7, renderer: "oceanRenderer" },
+      { id: "petals", name: "花瓣雨", short: "少量花瓣慢慢落下，温柔又纪念。", preview: "assets/imagery/petals/preview.webp", defaultDuration: 6, renderer: "petalsRenderer" }
+    ];
+  }
+
+  function normalizeImageryCode(value) {
+    const legacy = { cat: "kitten", gift: "balloons", star: "stars", motif: "kitten" };
+    const code = legacy[value] || value || "kitten";
+    return allImagery().some((item) => item.id === code) ? code : "kitten";
+  }
+
+  function imageryMeta(value) {
+    const code = normalizeImageryCode(value);
+    return allImagery().find((item) => item.id === code) || allImagery()[0];
+  }
+
+  function clampDuration(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return 6;
+    return Math.min(10, Math.max(4, Math.round(number)));
+  }
+
+  function createSurpriseBoxConfig(overrides = {}) {
+    return normalizeSurpriseBoxItem(overrides);
+  }
+
+  function normalizeSurpriseBoxItem(item = {}) {
+    const imagery = imageryMeta(item.imageryCode || item.motif);
+    const revealModes = ["click", "birthday_day", "specific_time", "secret_code"];
+    const secondary = item.secondaryImageryCode ? normalizeImageryCode(item.secondaryImageryCode) : null;
+    return {
+      moduleCode: "surpriseBox",
+      displayName: "惊喜盲盒",
+      imageryCode: imagery.id,
+      secondaryImageryCode: secondary && secondary !== imagery.id ? secondary : null,
+      surpriseTitle: item.surpriseTitle || item.title || "给你藏了一份小惊喜",
+      surpriseMessage: item.surpriseMessage || item.content || "",
+      signature: item.signature || "",
+      revealMode: revealModes.includes(item.revealMode) ? item.revealMode : "click",
+      durationSeconds: clampDuration(item.durationSeconds || imagery.defaultDuration || 6),
+      soundEnabled: item.soundEnabled === true || item.soundEnabled === "true",
+      customAttachmentFileId: item.customAttachmentFileId || null
+    };
+  }
+
+  function normalizeSurpriseBoxState() {
+    const current = state.modules.surpriseBox;
+    if (!Array.isArray(current) || !current.length) {
+      state.modules.surpriseBox = [createSurpriseBoxConfig()];
+      return;
+    }
+    state.modules.surpriseBox = [normalizeSurpriseBoxItem(current[0])];
+  }
+
+  function primarySurpriseBox() {
+    normalizeSurpriseBoxState();
+    return state.modules.surpriseBox[0];
   }
 
   function currentPlan() {
@@ -398,7 +468,7 @@
       { label: "音乐", done: hasMusicInfo() },
       { label: "隐私确认", done: Boolean(state.privacy.privacyConfirmed) },
       { label: "留言墙", done: !modules.includes("messageWall") || hasAnyText(state.modules.messageWall, "text") },
-      { label: "惊喜盲盒", done: !modules.includes("surpriseBox") || hasAnyText(state.modules.surpriseBox, "content") },
+      { label: "惊喜盲盒", done: !modules.includes("surpriseBox") || Boolean(primarySurpriseBox().imageryCode && primarySurpriseBox().surpriseMessage.trim()) },
       { label: "歌单", done: !modules.includes("playlist") || hasAnyText(state.modules.playlist, "song") },
       { label: "清单", done: !modules.includes("partyChecklist") || state.modules.partyChecklist.some(Boolean) },
       { label: "彩蛋", done: !modules.includes("hiddenEgg") || Boolean(state.modules.hiddenEgg.content.trim()) }
@@ -666,67 +736,80 @@
     <button type="button" class="secondary-button" data-module-add="${moduleId}">添加一条</button>`;
   }
 
-  function surpriseMotifMeta(value) {
-    const map = {
-      cat: { title: "小猫", className: "motif-cat", visual: "小猫", hint: "打开盲盒时，页面以柔软、贴近、陪伴感的动效呈现。" },
-      fireworks: { title: "烟花", className: "motif-fireworks", visual: "烟花", hint: "打开盲盒时，页面以高光、庆祝、绽放感的动效呈现。" },
-      flowers: { title: "鲜花", className: "motif-flowers", visual: "鲜花", hint: "打开盲盒时，页面以花束、花瓣、温柔盛放感呈现。" },
-      stars: { title: "星光", className: "motif-stars", visual: "星光", hint: "打开盲盒时，页面以闪光、星夜、许愿感呈现。" },
-      ocean: { title: "海浪", className: "motif-ocean", visual: "海浪", hint: "打开盲盒时，页面以夏日、海风、松弛感呈现。" },
-      gift: { title: "礼物", className: "motif-gift", visual: "礼物", hint: "打开盲盒时，页面以礼盒开启、惊喜揭晓感呈现。" }
-    };
-    return map[value] || map.cat;
-  }
-
-  function surpriseMotifOptions(selected) {
-    const options = [
-      ["cat", "小猫"],
-      ["fireworks", "烟花"],
-      ["flowers", "鲜花"],
-      ["stars", "星光"],
-      ["ocean", "海浪"],
-      ["gift", "礼物"]
-    ];
-    return options.map(([value, label]) => `<option value="${escapeAttr(value)}" ${selected === value ? "selected" : ""}>${escapeHTML(label)}</option>`).join("");
+  function renderImageryCards(moduleId, index, selectedCode) {
+    return `<div class="imagery-grid" role="radiogroup" aria-label="选择打开盲盒时出现的惊喜">${allImagery().map((image) => {
+      const selected = image.id === selectedCode;
+      return `
+        <button class="imagery-card ${selected ? "selected" : ""}" type="button" data-surprise-imagery="${escapeAttr(image.id)}" data-index="${index}" aria-pressed="${selected}">
+          <img src="${escapeAttr(image.preview)}" alt="${escapeAttr(image.name)}预览" loading="lazy">
+          <strong>${escapeHTML(image.name)}</strong>
+          <p>${escapeHTML(image.short)}</p>
+        </button>
+      `;
+    }).join("")}</div>`;
   }
 
   function renderSurpriseBoxList(moduleId, list) {
-    return `<div class="repeat-list">${list.map((item, index) => {
-      if (!item.motif) item.motif = "cat";
-      const motif = surpriseMotifMeta(item.motif);
+    const normalized = Array.isArray(list) && list.length ? [normalizeSurpriseBoxItem(list[0])] : [createSurpriseBoxConfig()];
+    state.modules[moduleId] = normalized;
+    return `<div class="repeat-list surprise-config-list">${normalized.map((item, index) => {
+      const imagery = imageryMeta(item.imageryCode);
+      const fallbackMessage = item.surpriseMessage || imagery.defaultMessage || "今天所有美好的意象，都想向 TA 靠近一点。";
       return `
-        <div class="repeat-item surprise-item">
-          ${inputFor(moduleId, "title", "盲盒标题", item.title, "text", index)}
-          ${textareaFor(moduleId, "content", "盲盒内容", item.content, index, "打开后看到的惊喜、祝福或好友留言")}
-          <label class="field">打开意象
-            <select data-module-field="${moduleId}" data-key="motif" data-index="${index}">
-              ${surpriseMotifOptions(item.motif)}
-            </select>
-          </label>
-          <div class="motif-preview ${motif.className}" data-motif-preview>
-            <div class="motif-visual" aria-hidden="true">${escapeHTML(motif.visual)}</div>
-            <div><strong>${escapeHTML(motif.title)}沉浸式打开</strong><p>${escapeHTML(motif.hint)}</p></div>
+        <div class="repeat-item surprise-item" data-surprise-config="${index}">
+          <div class="surprise-intro">
+            <h4>选择打开盲盒时出现的惊喜</h4>
+            <p>TA 打开盲盒后，整个页面会短暂进入专属沉浸场景。</p>
           </div>
-          ${inputFor(moduleId, "openAt", "开启时间", item.openAt || "birthday", "text", index)}
-          <button type="button" class="text-button danger" data-module-remove="${moduleId}" data-index="${index}">删除这一条</button>
+          ${renderImageryCards(moduleId, index, item.imageryCode)}
+          ${inputFor(moduleId, "surpriseTitle", "惊喜标题", item.surpriseTitle, "text", index)}
+          ${textareaFor(moduleId, "surpriseMessage", "专属惊喜祝福", item.surpriseMessage, index, fallbackMessage)}
+          ${inputFor(moduleId, "signature", "署名（可选）", item.signature, "text", index)}
+          <label class="switch-row"><input type="checkbox" data-module-field="${moduleId}" data-key="soundEnabled" data-index="${index}" ${item.soundEnabled ? "checked" : ""}> 打开时播放轻音效</label>
+          <div class="surprise-meta-row">
+            <span>打开方式：点击打开</span>
+            <span>预计沉浸 ${item.durationSeconds} 秒</span>
+          </div>
+          <div class="imagery-selected-preview">
+            <img src="${escapeAttr(imagery.preview)}" alt="${escapeAttr(imagery.name)}意象预览" loading="lazy">
+            <div><strong>${escapeHTML(imagery.name)}沉浸式打开</strong><p>${escapeHTML(imagery.long || imagery.short)}</p></div>
+          </div>
+          <button type="button" class="secondary-button" data-surprise-preview="${index}">预览沉浸惊喜</button>
         </div>
       `;
-    }).join("")}</div>
-    <button type="button" class="secondary-button" data-module-add="${moduleId}">添加一条</button>`;
+    }).join("")}</div>`;
   }
 
-  function updateSurpriseMotifPreview(container, value) {
-    if (!container) return;
-    const preview = container.querySelector("[data-motif-preview]");
-    if (!preview) return;
-    const motif = surpriseMotifMeta(value);
-    preview.className = "motif-preview " + motif.className;
-    const visual = preview.querySelector(".motif-visual");
-    const title = preview.querySelector("strong");
-    const text = preview.querySelector("p");
-    if (visual) visual.textContent = motif.visual;
-    if (title) title.textContent = motif.title + "沉浸式打开";
-    if (text) text.textContent = motif.hint;
+  function openSurprisePreview(index) {
+    const item = normalizeSurpriseBoxItem(state.modules.surpriseBox[index] || {});
+    const imagery = imageryMeta(item.imageryCode);
+    const config = {
+      ...item,
+      surpriseMessage: item.surpriseMessage || imagery.defaultMessage || "今天所有美好的意象，都想向 TA 靠近一点。"
+    };
+    if (typeof window.openSurpriseExperience !== "function") {
+      showToast("沉浸式预览脚本未加载");
+      return;
+    }
+    window.openSurpriseExperience(config, getThemeContext());
+  }
+
+  function getThemeContext() {
+    const template = currentTemplate();
+    const paletteMap = {
+      T01: { primaryColor: "#2f80ed", accentColor: "#ff6f91", backgroundColor: "#fffaf2" },
+      T02: { primaryColor: "#e3503e", accentColor: "#1f72b8", backgroundColor: "#fff2d8" },
+      T03: { primaryColor: "#ee6954", accentColor: "#2177c7", backgroundColor: "#fff0dc" },
+      T04: { primaryColor: "#1557c4", accentColor: "#ff6ba9", backgroundColor: "#082b78" },
+      T05: { primaryColor: "#f55f93", accentColor: "#8a6cf2", backgroundColor: "#fff6f7" },
+      T06: { primaryColor: "#e46b91", accentColor: "#f6b4c9", backgroundColor: "#120d11" },
+      T07: { primaryColor: "#e77955", accentColor: "#2c8b8b", backgroundColor: "#fff1d8" },
+      T08: { primaryColor: "#d87991", accentColor: "#b79adf", backgroundColor: "#ffe3ec" },
+      T09: { primaryColor: "#2f72c4", accentColor: "#7bbbd7", backgroundColor: "#eef8ff" },
+      T10: { primaryColor: "#ff4f94", accentColor: "#7d4df4", backgroundColor: "#fff1f7" },
+      T11: { primaryColor: "#ff2f92", accentColor: "#246cff", backgroundColor: "#fbf1de" }
+    };
+    return { templateId: template.id, ...(paletteMap[template.id] || paletteMap.T01) };
   }
 
   function renderStringList(moduleId, list, label) {
@@ -776,16 +859,33 @@
     } else {
       state.modules[moduleId][key] = key === "wishCount" ? Number(value) : value;
     }
-    if (moduleId === "surpriseBox" && key === "motif") {
-      updateSurpriseMotifPreview(field.closest(".repeat-item"), value);
+    if (moduleId === "surpriseBox") {
+      const itemIndex = Number(index || 0);
+      state.modules[moduleId][itemIndex] = normalizeSurpriseBoxItem(state.modules[moduleId][itemIndex]);
     }
     renderProgress();
     persistDraft();
   }
 
   function handleModuleAction(event) {
+    const imageryButton = event.target.closest("[data-surprise-imagery]");
+    const previewButton = event.target.closest("[data-surprise-preview]");
     const addButton = event.target.closest("[data-module-add]");
     const removeButton = event.target.closest("[data-module-remove]");
+    if (imageryButton) {
+      const index = Number(imageryButton.dataset.index || 0);
+      const current = normalizeSurpriseBoxItem(state.modules.surpriseBox[index] || {});
+      const imagery = imageryMeta(imageryButton.dataset.surpriseImagery);
+      state.modules.surpriseBox[index] = normalizeSurpriseBoxItem({ ...current, imageryCode: imagery.id, durationSeconds: imagery.defaultDuration });
+      renderModules();
+      renderProgress();
+      persistDraft();
+      return;
+    }
+    if (previewButton) {
+      openSurprisePreview(Number(previewButton.dataset.surprisePreview || 0));
+      return;
+    }
     if (addButton) {
       const id = addButton.dataset.moduleAdd;
       addModuleItem(id);
@@ -808,7 +908,7 @@
 
   function addModuleItem(id) {
     if (id === "messageWall") state.modules[id].push({ author: "", text: "" });
-    if (id === "surpriseBox") state.modules[id].push({ title: "", content: "", openAt: "birthday", motif: "cat" });
+    if (id === "surpriseBox") state.modules[id] = [createSurpriseBoxConfig()];
     if (id === "playlist") state.modules[id].push({ song: "", artist: "", reason: "" });
     if (id === "birthdayMap") state.modules[id].push({ place: "", story: "", link: "" });
     if (id === "giftVote" && state.modules[id].length < 6) state.modules[id].push({ name: "", reason: "" });
@@ -896,7 +996,11 @@
     }
     const modules = activeModuleIds();
     if (modules.includes("messageWall") && !hasAnyText(state.modules.messageWall, "text")) notices.push("留言墙至少需要 1 条留言内容。");
-    if (modules.includes("surpriseBox") && !hasAnyText(state.modules.surpriseBox, "content")) notices.push("惊喜盲盒至少需要 1 条惊喜内容。");
+    if (modules.includes("surpriseBox")) {
+      const surprise = primarySurpriseBox();
+      if (!surprise.imageryCode) notices.push("请选择惊喜盲盒意象。");
+      if (!surprise.surpriseMessage.trim()) notices.push("惊喜盲盒需要填写打开后看到的专属祝福。");
+    }
     if (modules.includes("playlist") && !hasAnyText(state.modules.playlist, "song")) notices.push("生日歌单至少需要 1 首歌曲。");
     if (modules.includes("hiddenEgg") && !state.modules.hiddenEgg.content.trim()) notices.push("隐藏彩蛋需要填写彩蛋内容。");
     if (strict && notices.length) showToast(notices[0]);
@@ -917,8 +1021,11 @@
 
   function buildOrderJson() {
     const now = new Date().toISOString();
+    const orderId = `BD-${Date.now()}`;
+    const selectedModules = activeModuleIds();
+    const moduleData = normalizedModuleData();
     return {
-      orderId: `BD-${Date.now()}`,
+      orderId,
       status: "submitted",
       source: "local-mock",
       createdAt: now,
@@ -934,9 +1041,74 @@
       content: clone(state.content),
       media: clone(state.media),
       music: clone(state.music),
-      selectedModules: activeModuleIds(),
-      moduleData: clone(state.modules),
-      privacy: clone(state.privacy)
+      selectedModules,
+      moduleLabels: buildModuleLabels(selectedModules),
+      moduleData,
+      privacy: clone(state.privacy),
+      birthdayPageConfig: buildBirthdayPageConfig(orderId, moduleData, selectedModules)
+    };
+  }
+
+  function normalizedModuleData() {
+    const data = clone(state.modules);
+    data.surpriseBox = [primarySurpriseBox()];
+    return data;
+  }
+
+  function buildModuleLabels(moduleIds) {
+    return moduleIds.reduce((labels, id) => {
+      labels[id] = moduleCatalog[id] ? moduleCatalog[id].name : id;
+      return labels;
+    }, {});
+  }
+
+  function buildBirthdayPageConfig(orderId, moduleData, selectedModules) {
+    const surprise = moduleData.surpriseBox && moduleData.surpriseBox[0] ? moduleData.surpriseBox[0] : null;
+    const modules = selectedModules.reduce((result, id) => {
+      result[id] = { enabled: true };
+      return result;
+    }, {});
+    if (surprise && selectedModules.includes("surpriseBox")) {
+      modules.surpriseBox = {
+        enabled: true,
+        displayName: "惊喜盲盒",
+        imageryCode: surprise.imageryCode,
+        secondaryImageryCode: surprise.secondaryImageryCode,
+        surpriseTitle: surprise.surpriseTitle,
+        surpriseMessage: surprise.surpriseMessage,
+        signature: surprise.signature,
+        revealMode: surprise.revealMode,
+        durationSeconds: surprise.durationSeconds,
+        soundEnabled: surprise.soundEnabled,
+        renderMode: "immersive"
+      };
+    }
+    return {
+      orderId,
+      templateId: currentTemplate().id,
+      recipient: {
+        name: state.recipient.recipientName,
+        birthday: state.recipient.birthday
+      },
+      sender: {
+        name: state.sender.senderName,
+        anonymous: state.sender.senderAnonymous
+      },
+      relationship: state.recipient.relationshipType,
+      content: {
+        headline: state.content.headline,
+        message: state.content.longMessage || state.content.headline
+      },
+      photos: {
+        cover: state.media.cover ? state.media.cover.name : null,
+        gallery: state.media.gallery.map((photo) => photo.name)
+      },
+      modules,
+      privacy: {
+        allowShare: state.privacy.allowShare,
+        allowIndexing: state.privacy.allowIndexing,
+        pageVisibility: state.privacy.pageVisibility
+      }
     };
   }
 

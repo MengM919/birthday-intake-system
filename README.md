@@ -1,6 +1,6 @@
 # 定制生日祝福网页信息收集系统
 
-这是一个静态网页 MVP，用来给“商业化定制生日祝福网页”收集客户资料。它不需要登录、不接真实接口、不需要数据库，直接上传到 GitHub Pages 或 Cloudflare Pages 就能预览。
+这是一个静态网页 MVP，用来给“商业化定制生日祝福网页”收集客户资料。当前静态版可以直接上传到 GitHub Pages 或 Cloudflare Pages 预览。正式商用版需要按 `SUPABASE_SETUP_GUIDE.md` 接入 Supabase，用来保存订单、照片和后台权限。
 
 ## 这个项目能做什么
 
@@ -9,7 +9,7 @@
 - 支持上传封面图和相册图，浏览器内本地预览。
 - 支持生日倒计时逻辑：今年生日没到就算今年，已经过了就算下一年。
 - 支持本地生成标准订单 JSON。
-- 带一个本地 Mock 商家后台，可以查看刚提交的订单。
+- 带一个本地 Mock 商家后台，可以查看刚提交的订单。正式商用时要切到 Supabase 后台。
 
 ## 文件说明
 
@@ -19,9 +19,11 @@
 - `config/plans.js`：套餐配置。
 - `config/templates.js`：模板配置。
 - `config/modules.js`：功能模块配置。
+- `config/imagery.js`：惊喜盲盒的 8 种意象配置。
 - `assets/templates/T01` 到 `assets/templates/T11`：11 张模板预览图。
 - `examples/order-sample.json`：标准订单 JSON 示例。
-- `.env.example`：以后接 Supabase / 后台时才会用到，现在不用填。
+- `.env.example`：以后接 Supabase / 后台时才会用到，现在不要填写 secret key。
+- `SUPABASE_SETUP_GUIDE.md`：正式商用接入 Supabase 的中文步骤。
 
 ## 怎么预览
 
@@ -46,7 +48,7 @@
 
 - `messageWall`：留言墙
 - `wishBottle`：许愿瓶
-- `surpriseBox`：好友盲盒
+- `surpriseBox`：惊喜盲盒
 - `playlist`：生日歌单
 - `partyChecklist`：派对清单
 - `hiddenEgg`：隐藏彩蛋
@@ -82,7 +84,15 @@
 
 演示密码：`demo-admin`
 
-注意：这个密码只是本地 Mock，不能当真正的后台安全方案。真实商用时要改成 Supabase Auth、Cloudflare Access，或服务端鉴权。
+注意：这个密码只是本地 Mock，不能当真正的后台安全方案。真实商用时要改成 Supabase Auth + admin_users 权限 + RLS。
+
+## 惊喜盲盒怎么配置
+
+内部模块 ID 仍然是 `surpriseBox`，不要改。页面上给客户看到的名字统一是“惊喜盲盒”。
+
+打开 `config/imagery.js` 可以看到 8 种意象：小猫、烟花、鲜花、星星、蝴蝶、生日气球、海浪、花瓣雨。客户在 Step 6 选择意象后，订单 JSON 会保存 `imageryCode`，以后生日网页生成器会根据它渲染沉浸式惊喜。
+
+第一版每个惊喜盲盒只选择一个主意象。高套餐未来可以扩展为主意象 + 辅助意象。
 
 ## 怎么上传到 GitHub Pages
 

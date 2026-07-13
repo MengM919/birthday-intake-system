@@ -530,3 +530,239 @@ pre {
 @media (max-width: 430px) {
   .motif-preview { grid-template-columns: 1fr; }
 }
+
+.surprise-config-list { gap: 14px; }
+.surprise-intro { display: grid; gap: 4px; }
+.surprise-intro h4 { margin: 0; font-size: 1rem; }
+.surprise-intro p { margin: 0; color: var(--muted); }
+
+.imagery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.imagery-card {
+  display: grid;
+  grid-template-rows: 92px auto 1fr;
+  gap: 7px;
+  width: 100%;
+  min-height: 186px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  text-align: left;
+  box-shadow: none;
+}
+
+.imagery-card img {
+  width: 100%;
+  height: 92px;
+  border-radius: calc(var(--radius) - 2px);
+  object-fit: cover;
+  background: var(--panel-soft);
+}
+
+.imagery-card strong { font-size: 0.95rem; }
+.imagery-card p { margin: 0; color: var(--muted); font-size: 0.78rem; line-height: 1.45; }
+.imagery-card.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(229, 111, 120, 0.14); }
+
+.surprise-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.surprise-meta-row span {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: rgba(118, 183, 166, 0.11);
+}
+
+.imagery-selected-preview {
+  display: grid;
+  grid-template-columns: 94px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 116px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.imagery-selected-preview img {
+  width: 94px;
+  height: 94px;
+  border-radius: var(--radius);
+  object-fit: cover;
+}
+
+.imagery-selected-preview p { margin: 4px 0 0; color: var(--muted); }
+
+body.surprise-open { overflow: hidden; }
+.surprise-experience {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .24s ease;
+  isolation: isolate;
+}
+.surprise-experience.is-visible { opacity: 1; pointer-events: auto; }
+.surprise-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surprise-bg) 82%, #111 18%), rgba(14, 11, 16, 0.86)),
+    radial-gradient(circle at 30% 20%, var(--surprise-soft), transparent 34%);
+  backdrop-filter: blur(8px) saturate(1.08);
+}
+.surprise-canvas,
+.surprise-layer { position: absolute; inset: 0; width: 100%; height: 100%; }
+.surprise-layer { overflow: hidden; }
+.surprise-message-card {
+  position: relative;
+  z-index: 2;
+  width: min(520px, calc(100vw - 42px));
+  padding: 22px 20px;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 18px;
+  background: rgba(18, 16, 18, 0.38);
+  box-shadow: 0 26px 80px rgba(0,0,0,0.24);
+  text-align: center;
+  transform: translateY(12px) scale(.98);
+  transition: transform .35s ease;
+}
+.surprise-experience.is-visible .surprise-message-card { transform: translateY(0) scale(1); }
+.surprise-message-card span {
+  display: inline-block;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surprise-primary) 76%, #fff 24%);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+.surprise-message-card h2 { margin: 0 0 10px; font-size: clamp(1.35rem, 6vw, 2.2rem); }
+.surprise-message-card p { margin: 0; font-size: 1rem; line-height: 1.75; }
+.surprise-message-card small { display: block; margin-top: 12px; color: rgba(255,255,255,.82); }
+.surprise-close {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top));
+  right: 14px;
+  z-index: 3;
+  min-width: 82px;
+  height: 38px;
+  border: 1px solid rgba(255,255,255,0.32);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  font-weight: 850;
+}
+.surprise-piece {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  animation: surpriseFloat var(--speed) ease-in-out var(--delay) infinite alternate;
+  animation-play-state: running;
+}
+.surprise-experience.is-paused .surprise-piece { animation-play-state: paused; }
+.piece-stars {
+  width: calc(var(--size) * .45);
+  height: calc(var(--size) * .45);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 16px var(--piece-accent), 0 0 32px var(--piece-primary);
+}
+.piece-fireworks {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 12%, var(--piece-accent) 13% 22%, transparent 24%), conic-gradient(from 20deg, transparent 0 8%, var(--piece-primary) 9% 12%, transparent 13% 24%, var(--piece-accent) 25% 29%, transparent 30% 100%);
+  opacity: .86;
+}
+.piece-flowers {
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0 14%, var(--piece-accent) 15% 24%, transparent 25%), conic-gradient(var(--piece-primary), var(--piece-accent), var(--piece-primary), var(--piece-accent), var(--piece-primary));
+  transform: rotate(18deg);
+}
+.piece-flowers i { position: absolute; inset: 40% 10% auto; height: 2px; background: rgba(255,255,255,.65); transform: rotate(28deg); }
+.piece-kitten {
+  border-radius: 50% 50% 46% 46%;
+  background: color-mix(in srgb, var(--piece-accent) 38%, #fff 62%);
+  box-shadow: inset 0 -7px 0 rgba(0,0,0,0.04), 0 12px 34px rgba(0,0,0,0.12);
+}
+.piece-kitten::before,
+.piece-kitten::after { content: ""; position: absolute; top: -12%; width: 38%; height: 38%; background: inherit; transform: rotate(45deg); border-radius: 4px 70% 4px 70%; }
+.piece-kitten::before { left: 8%; }
+.piece-kitten::after { right: 8%; }
+.piece-kitten i,
+.piece-kitten b { position: absolute; top: 44%; width: 5px; height: 5px; border-radius: 50%; background: #4a3d3e; }
+.piece-kitten i { left: 34%; }
+.piece-kitten b { right: 34%; }
+.piece-butterflies i,
+.piece-butterflies b { position: absolute; top: 20%; width: 48%; height: 62%; border-radius: 70% 30% 70% 30%; background: color-mix(in srgb, var(--piece-primary) 66%, #fff 34%); }
+.piece-butterflies i { left: 3%; transform: rotate(-18deg); }
+.piece-butterflies b { right: 3%; transform: rotate(18deg) scaleX(-1); background: color-mix(in srgb, var(--piece-accent) 66%, #fff 34%); }
+.piece-balloons {
+  border-radius: 50% 50% 46% 46%;
+  background: radial-gradient(circle at 34% 24%, rgba(255,255,255,.86), transparent 18%), linear-gradient(140deg, var(--piece-primary), var(--piece-accent));
+  box-shadow: 0 18px 36px rgba(0,0,0,.14);
+}
+.piece-balloons i { position: absolute; left: 50%; top: 100%; width: 1px; height: 42px; background: rgba(255,255,255,.64); transform: translateX(-50%); }
+.piece-petals {
+  width: calc(var(--size) * .5);
+  height: var(--size);
+  border-radius: 70% 20% 70% 20%;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--piece-primary) 64%, #fff 36%), color-mix(in srgb, var(--piece-accent) 56%, #fff 44%));
+  opacity: .72;
+}
+.piece-ocean {
+  border-radius: 50%;
+  background: rgba(255,255,255,.6);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.76);
+}
+.surprise-ocean-wave {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: -8%;
+  height: 28vh;
+  background: repeating-radial-gradient(ellipse at 50% -20%, rgba(255,255,255,.38) 0 2px, transparent 3px 22px), linear-gradient(180deg, transparent, color-mix(in srgb, var(--surprise-accent) 54%, transparent 46%));
+  animation: oceanLift 7s ease-in-out infinite alternate;
+}
+@keyframes surpriseFloat {
+  from { transform: translate3d(-8px, 10px, 0) rotate(-4deg); opacity: .42; }
+  to { transform: translate3d(10px, -18px, 0) rotate(7deg); opacity: .96; }
+}
+@keyframes oceanLift {
+  from { transform: translateY(18px); opacity: .55; }
+  to { transform: translateY(-10px); opacity: .88; }
+}
+@media (min-width: 760px) {
+  .imagery-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 430px) {
+  .imagery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .imagery-card { grid-template-rows: 76px auto 1fr; min-height: 168px; }
+  .imagery-card img { height: 76px; }
+  .imagery-selected-preview { grid-template-columns: 1fr; }
+  .imagery-selected-preview img { width: 100%; height: 138px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .surprise-piece,
+  .surprise-ocean-wave,
+  .surprise-message-card { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

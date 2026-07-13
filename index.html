@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
@@ -70,7 +70,7 @@
               <div class="step-head">
                 <p class="eyebrow">Step 2 / 8</p>
                 <h2>挑选生日世界</h2>
-                <p>从 11 套真实模板预览图中选择 1 套。点击卡片选中，点“查看大图”可全屏预览。</p>
+                <p>从 11 套真实模板预览图中选择 1 套。点击卡片选中，点击“查看大图”可全屏预览。</p>
               </div>
               <div class="template-grid" id="templateGrid"></div>
             </section>
@@ -226,11 +226,11 @@
                 <label class="field">页面访问方式
                   <select name="pageVisibility">
                     <option value="unlisted">公开链接，但不公开索引</option>
-                    <option value="password">密码访问（后续）</option>
+                    <option value="password">密码访问（即将上线）</option>
                   </select>
                 </label>
               </div>
-              <label class="confirm-row"><input name="privacyConfirmed" type="checkbox" required> 我已确认：页面资料将用于生成生日网页，默认不允许搜索引擎收录，并支持后续申请删除。</label>
+              <label class="confirm-row"><input name="privacyConfirmed" type="checkbox" required> 我确认已获得页面中涉及人物的必要授权，并同意所提交的照片、文字和其他资料仅用于制作本次生日祝福网页。页面默认不会进入公开案例库；如需删除，可联系商家申请下线和删除。</label>
             </section>
 
             <section class="step-card" data-step="8">
@@ -262,7 +262,7 @@
           <div class="admin-gate" id="adminGate">
             <p class="eyebrow">Local Mock Admin</p>
             <h2>商家后台</h2>
-            <p>阶段 1 是本地 Mock。真实上线需改为 Supabase Auth 或服务端环境变量密码。</p>
+            <p>当前仍保留本地 Mock，正式商用请切换到 Supabase Auth + admin_users 权限。</p>
             <label class="field">后台演示密码
               <input id="adminPassword" type="password" placeholder="输入 demo-admin">
             </label>
@@ -306,6 +306,15 @@
     <script src="config/plans.js"></script>
     <script src="config/templates.js"></script>
     <script src="config/modules.js"></script>
-    <script src="app.js?v=20260710-flow-motif"></script>
+    <script src="config/imagery.js"></script>
+    <script src="config/supabase.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/orders.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/autosave.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/surprise-renderer.js"></script>
+    <script src="app.js?v=20260711-surprise-supabase"></script>
   </body>
 </html>
