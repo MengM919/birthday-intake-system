@@ -11,7 +11,7 @@
       return `orders/${orderId}/${userId}/${category}/${id}.${ext}`;
     },
     validateFile(file, type) {
-      if (type === "image" && !allowedImageTypes.includes(file.type)) throw new Error("仅支持 JPG、PNG、WEBP、HEIC、HEIF 图片。");
+      if ((type === "image" || type === "cover") && !allowedImageTypes.includes(file.type)) throw new Error("仅支持 JPG、PNG、WEBP、HEIC、HEIF 图片。");
       const limit = type === "cover" ? 15 : type === "audio" ? 30 : 10;
       if (file.size > limit * 1024 * 1024) throw new Error(`${file.name} 超过 ${limit}MB。`);
     },

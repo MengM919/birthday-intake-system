@@ -766,3 +766,12 @@ body.surprise-open { overflow: hidden; }
   .surprise-ocean-wave,
   .surprise-message-card { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+.admin-create-order {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}

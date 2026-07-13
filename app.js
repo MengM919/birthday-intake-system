@@ -8,6 +8,20 @@
   const draftKey = "bd_intake_draft_v1";
   const ordersKey = "bd_intake_orders_v1";
   const adminPassword = "demo-admin";
+  const cloudState = {
+    orderId: null,
+    userId: null,
+    isAdmin: false,
+    isHydrating: false,
+    adminOrders: []
+  };
+  const planCodeById = {
+    P01: "basic_99",
+    P02: "heart_169",
+    P03: "surprise_249",
+    P04: "all_love_399"
+  };
+  const planIdByCode = Object.fromEntries(Object.entries(planCodeById).map(([id, code]) => [code, id]));
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -94,6 +108,8 @@
       renderModules();
       renderProgress();
       renderAdminFilters();
+      configureAdminGate();
+      void initCloudOrder();
     } catch (error) {
       console.error("Birthday intake system initialization failed:", error);
       alert(
@@ -110,6 +126,10 @@
     $("#planGrid").addEventListener("click", (event) => {
       const button = event.target.closest("[data-plan-id]");
       if (!button) return;
+      if (cloudState.orderId) {
+        showToast("该订单的套餐已由商家创建时确定。");
+        return;
+      }
       state.planId = button.dataset.planId;
       state.selectedOptionalModules = defaultOptionalModules();
       trimGalleryToPlan();
@@ -129,6 +149,10 @@
         return;
       }
       if (!selectButton) return;
+      if (cloudState.orderId) {
+        showToast("该订单的模板已由商家创建时确定。");
+        return;
+      }
       state.templateId = selectButton.dataset.templateId;
       renderTemplates();
       renderProgress();
@@ -152,13 +176,21 @@
     setupDropZone($("#coverDrop"), (files) => loadCover(files[0]));
     setupDropZone($("#galleryDrop"), (files) => loadGallery(files));
 
-    $("#galleryList").addEventListener("click", (event) => {
+    $("#galleryList").addEventListener("click", async (event) => {
       const button = event.target.closest("[data-remove-photo]");
       if (!button) return;
-      state.media.gallery = state.media.gallery.filter((photo) => photo.id !== button.dataset.removePhoto);
+      const photo = state.media.gallery.find((item) => item.id === button.dataset.removePhoto);
+      state.media.gallery = state.media.gallery.filter((item) => item.id !== button.dataset.removePhoto);
       renderUploads();
       renderProgress();
       persistDraft();
+      if (photo && photo.storageRecord && cloudState.orderId) {
+        try {
+          await window.BirthdayCloudOrders.deleteFile(photo.storageRecord);
+        } catch (error) {
+          showToast("照片已从页面移除，但云端删除失败：" + error.message);
+        }
+      }
     });
 
     $("#generateBlessing").addEventListener("click", generateBlessings);
@@ -190,12 +222,18 @@
     });
 
     $("#unlockAdmin").addEventListener("click", unlockAdmin);
+    $("#adminCreateOrderForm").addEventListener("submit", createCloudOrder);
     $("#adminSearch").addEventListener("input", renderAdminOrders);
     $("#adminStatusFilter").addEventListener("change", renderAdminOrders);
     $("#adminPlanFilter").addEventListener("change", renderAdminOrders);
     $("#adminTemplateFilter").addEventListener("change", renderAdminOrders);
     $("#exportAllOrders").addEventListener("click", exportAllOrders);
     $("#adminOrderList").addEventListener("click", (event) => {
+      const cloudButton = event.target.closest("[data-cloud-order]");
+      if (cloudButton) {
+        renderCloudOrderDetail(cloudButton.dataset.cloudOrder);
+        return;
+      }
       const button = event.target.closest("[data-open-order]");
       if (button) renderOrderDetail(button.dataset.openOrder);
     });
@@ -208,6 +246,139 @@
     $("#closeTemplatePreview").addEventListener("click", () => $("#templatePreviewDialog").close());
   }
 
+  async function initCloudOrder() {
+    const supabase = window.BirthdaySupabase;
+    if (!supabase || !supabase.isEnabled || !supabase.isEnabled()) return;
+    try {
+      const session = await window.BirthdayAuth.ensureAnonymousSession();
+      cloudState.userId = session.user ? session.user.id : null;
+      const params = new URLSearchParams(window.location.search);
+      const orderNumber = params.get("order");
+      const token = params.get("token");
+      if (!orderNumber || !token) return;
+
+      const claimed = await window.BirthdayCloudOrders.claimOrder(orderNumber, token);
+      cloudState.orderId = claimed.order.id;
+      const record = await window.BirthdayCloudOrders.loadOrder(cloudState.orderId);
+      hydrateCloudOrder(record);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showToast("订单已安全领取，正在保存到你的专属草稿。");
+    } catch (error) {
+      console.error("Cloud order initialization failed:", error);
+      showToast("无法领取该订单：" + error.message);
+    }
+  }
+
+  function hydrateCloudOrder(record) {
+    cloudState.isHydrating = true;
+    const order = record.order || {};
+    const content = record.content || {};
+    const moduleRows = record.modules || [];
+    const customData = content.custom_data || {};
+    state.planId = planIdByCode[record.plan && record.plan.code] || state.planId;
+    state.templateId = record.template && record.template.code ? record.template.code : state.templateId;
+    state.order = {
+      ...state.order,
+      orderChannel: order.purchase_channel || state.order.orderChannel,
+      orderNo: order.external_order_number || "",
+      contactMethod: order.contact_method || state.order.contactMethod,
+      contactValue: order.contact_value || ""
+    };
+    state.recipient = {
+      ...state.recipient,
+      recipientName: order.recipient_name || "",
+      birthday: order.recipient_birthday || "",
+      showAge: Boolean(order.show_age),
+      relationshipType: order.relationship_type || state.recipient.relationshipType,
+      relationshipOther: customData.relationshipOther || ""
+    };
+    state.sender = {
+      ...state.sender,
+      senderName: order.sender_name || "",
+      senderAnonymous: Boolean(order.sender_anonymous)
+    };
+    state.content = {
+      ...state.content,
+      headline: content.headline || "",
+      longMessage: content.long_message || "",
+      signature: content.signature || "",
+      aiFacts: customData.aiFacts || "",
+      aiTone: customData.aiTone || state.content.aiTone
+    };
+    state.music = { ...state.music, ...(content.music || {}) };
+    state.privacy = {
+      ...state.privacy,
+      allowShare: content.allow_share !== false,
+      allowIndexing: Boolean(content.allow_indexing),
+      pageVisibility: content.access_mode || "unlisted",
+      privacyConfirmed: Boolean(order.privacy_consent_at)
+    };
+
+    const remoteModules = {};
+    const selected = [];
+    moduleRows.forEach((row) => {
+      if (!row.enabled) return;
+      selected.push(row.module_code);
+      remoteModules[row.module_code] = row.configuration || {};
+    });
+    if (selected.length) state.selectedOptionalModules = selected.filter((code) => !(currentPlan().includedModules || []).includes(code));
+    Object.entries(remoteModules).forEach(([code, configuration]) => {
+      if (code === "surpriseBox") state.modules.surpriseBox = [normalizeSurpriseBoxItem(configuration)];
+      else state.modules[code] = configuration;
+    });
+
+    const cover = (record.files || []).find((file) => file.file_type === "cover");
+    const gallery = (record.files || []).filter((file) => file.file_type === "gallery");
+    state.media.cover = cover ? cloudMediaFile(cover) : null;
+    state.media.gallery = gallery.map(cloudMediaFile);
+    normalizeState();
+    syncFormFromState();
+    renderPlans();
+    renderTemplates();
+    renderModules();
+    renderUploads();
+    renderProgress();
+    cloudState.isHydrating = false;
+  }
+
+  function cloudMediaFile(file) {
+    return {
+      id: file.id,
+      name: file.original_filename || "photo",
+      type: file.mime_type || "",
+      size: file.size_bytes || 0,
+      width: file.width || 0,
+      height: file.height || 0,
+      dataUrl: file.previewUrl || "",
+      storageRecord: file,
+      storagePath: file.storage_path,
+      uploaded: true
+    };
+  }
+
+  function cloudSnapshot() {
+    const modules = normalizedModuleData();
+    modules.bgm = { music: clone(state.music) };
+    modules.countdown = { birthday: state.recipient.birthday || null };
+    return {
+      order: clone(state.order),
+      recipient: clone(state.recipient),
+      sender: clone(state.sender),
+      content: clone(state.content),
+      music: clone(state.music),
+      privacy: clone(state.privacy),
+      selectedModules: activeModuleIds(),
+      modules
+    };
+  }
+
+  function scheduleCloudDraft() {
+    if (cloudState.isHydrating || !cloudState.orderId || !window.BirthdayCloudOrders) return;
+    window.BirthdayAutosave.schedule(async () => {
+      await window.BirthdayCloudOrders.saveDraft(cloudState.orderId, cloudSnapshot());
+      document.body.dataset.cloudSave = "saved";
+    }, 1000);
+  }
   function normalizeState() {
     if (!plans.some((plan) => plan.id === state.planId)) state.planId = plans[0] ? plans[0].id : "P01";
     if (!templates.some((template) => template.id === state.templateId)) state.templateId = templates[0] ? templates[0].id : "T01";
@@ -488,9 +659,11 @@
   async function loadCover(file) {
     if (!file) return;
     try {
-      state.media.cover = await imageToData(file, 1200);
+      const photo = await imageToData(file, 1200);
+      state.media.cover = photo;
       renderUploads();
       renderProgress();
+      if (cloudState.orderId) await uploadCloudMedia(photo, file, "cover", 0);
       persistDraft();
     } catch (error) {
       showToast(error.message);
@@ -502,12 +675,16 @@
     const slots = Math.max(0, plan.galleryLimit - state.media.gallery.length);
     const selected = Array.from(files || []).slice(0, slots);
     if (!selected.length) {
-      showToast(`当前套餐最多上传 ${plan.galleryLimit} 张相册照片`);
+      showToast("当前套餐最多上传 " + plan.galleryLimit + " 张相册照片");
       return;
     }
     for (const file of selected) {
       try {
-        state.media.gallery.push(await imageToData(file, 900));
+        const photo = await imageToData(file, 900);
+        state.media.gallery.push(photo);
+        renderUploads();
+        renderProgress();
+        if (cloudState.orderId) await uploadCloudMedia(photo, file, "gallery", state.media.gallery.length);
       } catch (error) {
         showToast(error.message);
       }
@@ -515,6 +692,28 @@
     renderUploads();
     renderProgress();
     persistDraft();
+  }
+
+  async function uploadCloudMedia(photo, file, fileType, sortOrder) {
+    photo.uploading = true;
+    renderUploads();
+    try {
+      const record = await window.BirthdayCloudOrders.uploadFile(cloudState.orderId, fileType, file, {
+        width: photo.width,
+        height: photo.height,
+        sortOrder
+      });
+      photo.id = record.id;
+      photo.storageRecord = record;
+      photo.storagePath = record.storage_path;
+      photo.uploaded = true;
+    } catch (error) {
+      photo.uploadError = error.message;
+      throw new Error(file.name + " 上传失败：" + error.message);
+    } finally {
+      photo.uploading = false;
+      renderUploads();
+    }
   }
 
   function setupDropZone(zone, callback) {
@@ -1007,27 +1206,41 @@
     return notices;
   }
 
-  function submitOrder() {
+  async function submitOrder() {
     renderReview();
     const notices = validateOrder(true);
     if (notices.length) return;
-    const order = buildOrderJson();
-    saveOrder(order);
-    $("#jsonOutput").hidden = false;
-    $("#jsonPreview").textContent = JSON.stringify(order, null, 2);
-    renderAdminOrders();
-    showToast("订单 JSON 已生成，本地后台也已保存");
+
+    try {
+      let order;
+      if (cloudState.orderId) {
+        await window.BirthdayCloudOrders.saveDraft(cloudState.orderId, cloudSnapshot());
+        const result = await window.BirthdayCloudOrders.submitOrder(cloudState.orderId);
+        order = buildOrderJson(cloudState.orderId, result.order.status, "supabase");
+        showToast("订单已正式提交，商家后台现在可以审核。");
+      } else {
+        order = buildOrderJson();
+        saveOrder(order);
+        showToast("订单 JSON 已生成；当前仍是本地演示模式。");
+      }
+      $("#jsonOutput").hidden = false;
+      $("#jsonPreview").textContent = JSON.stringify(order, null, 2);
+      renderAdminOrders();
+    } catch (error) {
+      console.error("Order submission failed:", error);
+      showToast("提交失败：" + error.message);
+    }
   }
 
-  function buildOrderJson() {
+  function buildOrderJson(orderIdOverride, statusOverride, sourceOverride) {
     const now = new Date().toISOString();
-    const orderId = `BD-${Date.now()}`;
+    const orderId = orderIdOverride || ("BD-" + Date.now());
     const selectedModules = activeModuleIds();
     const moduleData = normalizedModuleData();
     return {
       orderId,
-      status: "submitted",
-      source: "local-mock",
+      status: statusOverride || "submitted",
+      source: sourceOverride || "local-mock",
       createdAt: now,
       updatedAt: now,
       plan: currentPlan(),
@@ -1142,29 +1355,74 @@
   }
 
   function switchView(view) {
-    $$(".view-button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+    $(".view-button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
     $("#intakeView").classList.toggle("hidden", view !== "intake");
     $("#intakeProgress").classList.toggle("hidden", view !== "intake");
     $("#adminView").classList.toggle("hidden", view !== "admin");
     if (view === "admin") renderAdminOrders();
   }
 
-  function unlockAdmin() {
-    if ($("#adminPassword").value !== adminPassword) {
-      showToast("演示密码是 demo-admin");
+  function cloudEnabled() {
+    return Boolean(window.BirthdaySupabase && window.BirthdaySupabase.isEnabled && window.BirthdaySupabase.isEnabled());
+  }
+
+  function configureAdminGate() {
+    const usingCloud = cloudEnabled();
+    $("#adminGateEyebrow").textContent = usingCloud ? "商家安全登录" : "Local Mock Admin";
+    $("#adminGateCopy").textContent = usingCloud
+      ? "使用 Supabase Auth 登录。只有已加入 admin_users 的商家账号可以查看全部订单。"
+      : "当前是本地演示模式，可输入 demo-admin 查看本机订单。";
+    $("#adminEmailField").classList.toggle("hidden", !usingCloud);
+    $("#adminPassword").placeholder = usingCloud ? "输入商家密码" : "输入 demo-admin";
+    $("#unlockAdmin").textContent = usingCloud ? "登录并进入后台" : "进入本地演示后台";
+    $("#adminCreateOrderForm").classList.toggle("hidden", !usingCloud);
+  }
+
+  async function unlockAdmin() {
+    if (!cloudEnabled()) {
+      if ($("#adminPassword").value !== adminPassword) {
+        showToast("演示密码是 demo-admin");
+        return;
+      }
+      $("#adminGate").classList.add("hidden");
+      $("#adminPanel").classList.remove("hidden");
+      renderAdminOrders();
       return;
     }
-    $("#adminGate").classList.add("hidden");
-    $("#adminPanel").classList.remove("hidden");
-    renderAdminOrders();
+
+    const email = $("#adminEmail").value.trim();
+    const password = $("#adminPassword").value;
+    if (!email || !password) {
+      showToast("请填写商家邮箱和密码。");
+      return;
+    }
+    try {
+      await window.BirthdayAdmin.signIn(email, password);
+      cloudState.isAdmin = true;
+      cloudState.userId = (await window.BirthdaySupabase.getClient().auth.getUser()).data.user.id;
+      $("#adminGate").classList.add("hidden");
+      $("#adminPanel").classList.remove("hidden");
+      $("#adminPanelTitle").textContent = "真实订单列表";
+      await renderCloudAdminOrders();
+      showToast("商家后台登录成功。");
+    } catch (error) {
+      console.error("Admin sign-in failed:", error);
+      showToast("无法登录商家后台：" + error.message);
+    }
   }
 
   function renderAdminFilters() {
-    $("#adminPlanFilter").innerHTML = `<option value="">全部套餐</option>` + plans.map((plan) => `<option value="${plan.id}">${plan.name}</option>`).join("");
-    $("#adminTemplateFilter").innerHTML = `<option value="">全部模板</option>` + templates.map((template) => `<option value="${template.id}">${template.id} ${template.name}</option>`).join("");
+    $("#adminPlanFilter").innerHTML = '<option value="">全部套餐</option>' + plans.map((plan) => '<option value="' + plan.id + '">' + escapeHTML(plan.name) + '</option>').join("");
+    $("#adminTemplateFilter").innerHTML = '<option value="">全部模板</option>' + templates.map((template) => '<option value="' + template.id + '">' + template.id + " " + escapeHTML(template.name) + '</option>').join("");
+    $("#adminCreatePlan").innerHTML = plans.map((plan) => '<option value="' + planCodeById[plan.id] + '">' + escapeHTML(plan.name) + " / " + plan.priceCny + "</option>").join("");
+    $("#adminCreateTemplate").innerHTML = templates.map((template) => '<option value="' + template.id + '">' + template.id + " " + escapeHTML(template.name) + "</option>").join("");
   }
 
   function renderAdminOrders() {
+    if (cloudState.isAdmin && cloudEnabled()) {
+      void renderCloudAdminOrders();
+      return;
+    }
     const adminSearch = $("#adminSearch");
     const adminStatusFilter = $("#adminStatusFilter");
     const adminPlanFilter = $("#adminPlanFilter");
@@ -1174,21 +1432,122 @@
     const plan = adminPlanFilter ? adminPlanFilter.value : "";
     const template = adminTemplateFilter ? adminTemplateFilter.value : "";
     const orders = readOrders().filter((order) => {
-      const text = `${order.orderId} ${order.recipient.recipientName} ${order.order.contactValue}`.toLowerCase();
+      const text = (order.orderId + " " + order.recipient.recipientName + " " + order.order.contactValue).toLowerCase();
       return (!query || text.includes(query))
         && (!status || order.status === status)
         && (!plan || order.plan.id === plan)
         && (!template || order.template.id === template);
     });
-    $("#adminOrderList").innerHTML = orders.length ? orders.map((order) => `
-      <button type="button" class="order-row" data-open-order="${order.orderId}">
-        <span>${escapeHTML(order.orderId)}</span>
-        <strong>${escapeHTML(order.recipient.recipientName || "未命名")}</strong>
-        <em>${escapeHTML(order.plan.name)} · ${escapeHTML(order.template.id)}</em>
-        <small>${escapeHTML(order.status)}</small>
-      </button>
-    `).join("") : `<p class="empty">暂无本地订单。提交一次表单后会出现在这里。</p>`;
+    $("#adminOrderList").innerHTML = orders.length ? orders.map((order) =>
+      '<button type="button" class="order-row" data-open-order="' + order.orderId + '">' +
+        "<span>" + escapeHTML(order.orderId) + "</span>" +
+        "<strong>" + escapeHTML(order.recipient.recipientName || "未命名") + "</strong>" +
+        "<em>" + escapeHTML(order.plan.name) + " · " + escapeHTML(order.template.id) + "</em>" +
+        "<small>" + escapeHTML(order.status) + "</small>" +
+      "</button>"
+    ).join("") : '<p class="empty">暂无本地订单。</p>';
     if (orders[0]) renderOrderDetail(orders[0].orderId);
+  }
+
+  function relatedValue(row, relation, key) {
+    const value = row[relation];
+    if (Array.isArray(value)) return value[0] ? value[0][key] : "";
+    return value ? value[key] : "";
+  }
+
+  async function renderCloudAdminOrders() {
+    try {
+      const rows = await window.BirthdayCloudOrders.listAdminOrders();
+      cloudState.adminOrders = rows;
+      const query = $("#adminSearch").value.trim().toLowerCase();
+      const status = $("#adminStatusFilter").value;
+      const plan = $("#adminPlanFilter").value;
+      const template = $("#adminTemplateFilter").value;
+      const filtered = rows.filter((row) => {
+        const rowPlan = relatedValue(row, "plans", "code");
+        const rowTemplate = relatedValue(row, "templates", "code");
+        const text = [row.order_number, row.recipient_name, row.contact_value].join(" ").toLowerCase();
+        return (!query || text.includes(query))
+          && (!status || row.status === status)
+          && (!plan || planCodeById[plan] === rowPlan)
+          && (!template || template === rowTemplate);
+      });
+      $("#adminOrderList").innerHTML = filtered.length ? filtered.map((row) =>
+        '<button type="button" class="order-row" data-cloud-order="' + row.id + '">' +
+          "<span>" + escapeHTML(row.order_number) + "</span>" +
+          "<strong>" + escapeHTML(row.recipient_name || "待顾客填写") + "</strong>" +
+          "<em>" + escapeHTML(relatedValue(row, "plans", "name")) + " · " + escapeHTML(relatedValue(row, "templates", "code")) + "</em>" +
+          "<small>" + escapeHTML(row.status) + "</small>" +
+        "</button>"
+      ).join("") : '<p class="empty">暂无真实订单。</p>';
+      if (filtered[0]) renderCloudOrderDetail(filtered[0].id);
+    } catch (error) {
+      console.error("Could not load cloud orders:", error);
+      $("#adminOrderList").innerHTML = '<p class="empty">无法读取订单：' + escapeHTML(error.message) + "</p>";
+    }
+  }
+
+  function renderCloudOrderDetail(orderId) {
+    const order = cloudState.adminOrders.find((item) => item.id === orderId);
+    if (!order) return;
+    const planName = relatedValue(order, "plans", "name");
+    const templateCode = relatedValue(order, "templates", "code");
+    $("#adminOrderDetail").innerHTML =
+      '<div class="detail-head"><div><p class="eyebrow">真实订单</p><h3>' + escapeHTML(order.order_number) + "</h3></div><span>" + escapeHTML(order.status) + "</span></div>" +
+      '<div class="detail-grid">' +
+        "<p><b>寿星</b>" + escapeHTML(order.recipient_name || "待填写") + "</p>" +
+        "<p><b>联系方式</b>" + escapeHTML(order.contact_value || "待填写") + "</p>" +
+        "<p><b>套餐</b>" + escapeHTML(planName) + "</p>" +
+        "<p><b>模板</b>" + escapeHTML(templateCode) + "</p>" +
+        "<p><b>渠道</b>" + escapeHTML(order.purchase_channel || "manual") + "</p>" +
+        "<p><b>创建时间</b>" + escapeHTML(new Date(order.created_at).toLocaleString()) + "</p>" +
+      "</div>" +
+      '<div class="status-actions">' +
+        '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="needs_revision">标记需补充</button>' +
+        '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="approved">标记通过</button>' +
+        '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="submitted">恢复待处理</button>' +
+      "</div>";
+  }
+
+  async function createCloudOrder(event) {
+    event.preventDefault();
+    if (!cloudState.isAdmin || !cloudEnabled()) {
+      showToast("请先登录真实商家后台。");
+      return;
+    }
+    try {
+      const result = await window.BirthdayCloudOrders.createOrder({
+        planCode: $("#adminCreatePlan").value,
+        templateCode: $("#adminCreateTemplate").value,
+        purchaseChannel: $("#adminCreateChannel").value,
+        externalOrderNumber: $("#adminCreateExternalOrder").value.trim() || null
+      });
+      const claimUrl = window.location.origin + window.location.pathname + result.claimUrlQuery;
+      $("#adminOrderDetail").innerHTML =
+        '<div class="detail-head"><div><p class="eyebrow">测试订单已创建</p><h3>' + escapeHTML(result.order.order_number) + "</h3></div><span>created</span></div>" +
+        '<label class="field">顾客领取链接<input id="newClaimUrl" readonly value="' + escapeHTML(claimUrl) + '"></label>' +
+        '<button class="primary-button" id="copyClaimUrl" type="button">复制领取链接</button>' +
+        "<p>请用无痕窗口或另一台手机打开此链接，作为顾客完成 8 步填写。</p>";
+      const copyButton = $("#copyClaimUrl");
+      if (copyButton) copyButton.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(claimUrl);
+        showToast("领取链接已复制。");
+      });
+      await renderCloudAdminOrders();
+      $("#adminOrderDetail").innerHTML =
+        '<div class="detail-head"><div><p class="eyebrow">测试订单已创建</p><h3>' + escapeHTML(result.order.order_number) + "</h3></div><span>created</span></div>" +
+        '<label class="field">顾客领取链接<input id="newClaimUrl" readonly value="' + escapeHTML(claimUrl) + '"></label>' +
+        '<button class="primary-button" id="copyClaimUrl" type="button">复制领取链接</button>' +
+        "<p>请用无痕窗口或另一台手机打开此链接，作为顾客完成 8 步填写。</p>";
+      const button = $("#copyClaimUrl");
+      if (button) button.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(claimUrl);
+        showToast("领取链接已复制。");
+      });
+    } catch (error) {
+      console.error("Could not create cloud order:", error);
+      showToast("创建测试订单失败：" + error.message);
+    }
   }
 
   function renderOrderDetail(orderId) {
@@ -1219,7 +1578,18 @@
     `;
   }
 
-  function updateOrderStatus(orderId, status) {
+  async function updateOrderStatus(orderId, status) {
+    if (cloudState.isAdmin && cloudEnabled()) {
+      try {
+        await window.BirthdayCloudOrders.updateOrderStatus(orderId, status);
+        await renderCloudAdminOrders();
+        renderCloudOrderDetail(orderId);
+        showToast("真实订单状态已更新。");
+      } catch (error) {
+        showToast("更新订单状态失败：" + error.message);
+      }
+      return;
+    }
     const orders = readOrders();
     const order = orders.find((item) => item.orderId === orderId);
     if (!order) return;
@@ -1232,8 +1602,9 @@
   }
 
   function exportAllOrders() {
-    const json = JSON.stringify(readOrders(), null, 2);
-    downloadText(`birthday-orders-${Date.now()}.json`, json);
+    const orders = cloudState.isAdmin && cloudEnabled() ? cloudState.adminOrders : readOrders();
+    const json = JSON.stringify(orders, null, 2);
+    downloadText("birthday-orders-" + Date.now() + ".json", json);
   }
 
   function copyJson() {
@@ -1261,6 +1632,7 @@
     } catch (error) {
       // Photos may exceed localStorage in real use; production should move them to object storage.
     }
+    scheduleCloudDraft();
   }
 
   function restoreDraft() {

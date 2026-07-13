@@ -1,4 +1,4 @@
-﻿# Supabase 商用接入操作手册
+# Supabase 商用接入操作手册
 
 这份说明写给没有编程基础的人。你只要照步骤操作，不需要改数据库代码。
 
@@ -28,8 +28,8 @@
 ```js
 window.BD_SUPABASE_CONFIG = {
   enabled: true,
-  url: "你的 Project URL",
-  publishableKey: "你的 publishable key",
+  url: "你的 Project URL（格式：https://项目ID.supabase.co）",
+  publishableKey: "你的 Publishable key",
   privateBucket: "birthday-order-private",
   publishedBucket: "birthday-published-assets",
   edgeFunctionRegion: "default"
@@ -73,17 +73,12 @@ window.BD_SUPABASE_CONFIG = {
 
 ## 7. 配置 Edge Functions secrets
 
-Supabase 左侧点 `Edge Functions`，进入 Secrets 或用 Supabase CLI 设置以下变量：
+进入 Edge Functions -> Secrets，只需要新增一个自定义 secret：
 
-```bash
-SUPABASE_URL=你的 Project URL
-SUPABASE_SERVICE_ROLE_KEY=你的 service_role key
-CLAIM_TOKEN_SECRET=自己设置一串很长的随机字符
-PUBLIC_BIRTHDAY_BASE_URL=https://mengm919.github.io/birthday-intake-system/pages/
-```
+Name：CLAIM_TOKEN_SECRET
+Value：你自己生成的一串随机长字符串
 
-这些是服务端密钥，只能存在 Supabase Edge Functions，不能放进 GitHub。
-
+不要手动创建或填写 SUPABASE_URL、SUPABASE_SERVICE_ROLE_KEY、数据库密码。Supabase 托管的 Edge Function 会自动提供这些服务器环境变量；service role 绝不能出现在 GitHub 或浏览器中。
 ## 8. 部署 Edge Functions
 
 如果你会用 Supabase CLI，可以在项目目录执行：
