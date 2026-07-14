@@ -1355,7 +1355,7 @@
   }
 
   function switchView(view) {
-    $(".view-button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
+    $$(".view-button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
     $("#intakeView").classList.toggle("hidden", view !== "intake");
     $("#intakeProgress").classList.toggle("hidden", view !== "intake");
     $("#adminView").classList.toggle("hidden", view !== "admin");
