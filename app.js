@@ -1340,9 +1340,25 @@
     };
   }
 
+  function fileMetadata(file) {
+    if (!file) return null;
+    const { dataUrl, previewUrl, ...metadata } = file;
+    return metadata;
+  }
+
+  function compactOrderForLocalStorage(order) {
+    return {
+      ...order,
+      media: {
+        cover: fileMetadata(order.media && order.media.cover),
+        gallery: ((order.media && order.media.gallery) || []).map(fileMetadata)
+      }
+    };
+  }
+
   function saveOrder(order) {
-    const orders = readOrders();
-    orders.unshift(order);
+    const orders = readOrders().map(compactOrderForLocalStorage);
+    orders.unshift(compactOrderForLocalStorage(order));
     localStorage.setItem(ordersKey, JSON.stringify(orders));
   }
 
@@ -1626,11 +1642,19 @@
     else dialog.setAttribute("open", "open");
   }
 
+  function localDraftSnapshot() {
+    const snapshot = clone(state);
+    // Never store Base64 photo data in localStorage. Photos stay in memory until
+    // they are uploaded to private Storage after an order has been claimed.
+    snapshot.media = { cover: null, gallery: [] };
+    return snapshot;
+  }
+
   function persistDraft() {
     try {
-      localStorage.setItem(draftKey, JSON.stringify(state));
+      localStorage.setItem(draftKey, JSON.stringify(localDraftSnapshot()));
     } catch (error) {
-      // Photos may exceed localStorage in real use; production should move them to object storage.
+      console.warn("Could not save the local text draft.", error);
     }
     scheduleCloudDraft();
   }
@@ -1638,7 +1662,10 @@
   function restoreDraft() {
     try {
       const saved = JSON.parse(localStorage.getItem(draftKey) || "null");
-      if (saved) Object.assign(state, saved);
+      if (saved) {
+        Object.assign(state, saved);
+        state.media = { cover: null, gallery: [] };
+      }
     } catch (error) {
       localStorage.removeItem(draftKey);
     }
