@@ -238,9 +238,18 @@
       if (button) renderOrderDetail(button.dataset.openOrder);
     });
     $("#adminOrderDetail").addEventListener("click", (event) => {
+      const publishButton = event.target.closest("[data-publish-order]");
+      if (publishButton) {
+        publishCloudOrder(publishButton.dataset.publishOrder);
+        return;
+      }
+      const copyButton = event.target.closest("[data-copy-published]");
+      if (copyButton) {
+        copyPublishedUrl(copyButton.dataset.copyPublished);
+        return;
+      }
       const button = event.target.closest("[data-status]");
-      if (!button) return;
-      updateOrderStatus(button.dataset.orderId, button.dataset.status);
+      if (button) updateOrderStatus(button.dataset.orderId, button.dataset.status);
     });
 
     $("#closeTemplatePreview").addEventListener("click", () => $("#templatePreviewDialog").close());
@@ -1508,21 +1517,57 @@
     if (!order) return;
     const planName = relatedValue(order, "plans", "name");
     const templateCode = relatedValue(order, "templates", "code");
+    const statusActions =
+      '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="needs_revision">标记需补充</button>' +
+      '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="approved">标记通过</button>' +
+      '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="submitted">恢复待处理</button>';
+    const publishAction = order.status === "approved"
+      ? '<button type="button" class="primary-button" data-publish-order="' + order.id + '">发布生日页</button>'
+      : "";
+    const publishedPanel = order.published_url
+      ? '<div class="published-link"><p class="eyebrow">专属生日页已发布</p><input readonly value="' + escapeAttr(order.published_url) + '"><div class="status-actions"><button type="button" class="secondary-button" data-copy-published="' + escapeAttr(order.published_url) + '">复制链接</button><a class="secondary-button" href="' + escapeAttr(order.published_url) + '" target="_blank" rel="noopener noreferrer">打开页面</a></div></div>'
+      : "";
     $("#adminOrderDetail").innerHTML =
-      '<div class="detail-head"><div><p class="eyebrow">真实订单</p><h3>' + escapeHTML(order.order_number) + "</h3></div><span>" + escapeHTML(order.status) + "</span></div>" +
+      '<div class="detail-head"><div><p class="eyebrow">真实订单</p><h3>' + escapeHTML(order.order_number) + '</h3></div><span>' + escapeHTML(order.status) + '</span></div>' +
       '<div class="detail-grid">' +
-        "<p><b>寿星</b>" + escapeHTML(order.recipient_name || "待填写") + "</p>" +
-        "<p><b>联系方式</b>" + escapeHTML(order.contact_value || "待填写") + "</p>" +
-        "<p><b>套餐</b>" + escapeHTML(planName) + "</p>" +
-        "<p><b>模板</b>" + escapeHTML(templateCode) + "</p>" +
-        "<p><b>渠道</b>" + escapeHTML(order.purchase_channel || "manual") + "</p>" +
-        "<p><b>创建时间</b>" + escapeHTML(new Date(order.created_at).toLocaleString()) + "</p>" +
-      "</div>" +
-      '<div class="status-actions">' +
-        '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="needs_revision">标记需补充</button>' +
-        '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="approved">标记通过</button>' +
-        '<button type="button" class="secondary-button" data-order-id="' + order.id + '" data-status="submitted">恢复待处理</button>' +
-      "</div>";
+        '<p><b>寿星</b>' + escapeHTML(order.recipient_name || "待客户填写") + '</p>' +
+        '<p><b>联系方式</b>' + escapeHTML(order.contact_value || "待客户填写") + '</p>' +
+        '<p><b>套餐</b>' + escapeHTML(planName) + '</p>' +
+        '<p><b>模板</b>' + escapeHTML(templateCode) + '</p>' +
+        '<p><b>渠道</b>' + escapeHTML(order.purchase_channel || "manual") + '</p>' +
+        '<p><b>创建时间</b>' + escapeHTML(new Date(order.created_at).toLocaleString()) + '</p>' +
+      '</div>' +
+      '<div class="status-actions">' + statusActions + publishAction + '</div>' +
+      publishedPanel;
+  }
+
+  async function publishCloudOrder(orderId) {
+    if (!cloudState.isAdmin || !cloudEnabled()) {
+      showToast("请先登录真实商家后台。");
+      return;
+    }
+    try {
+      showToast("正在生成专属生日页链接……");
+      const result = await window.BirthdayCloudOrders.publishOrder(orderId);
+      await renderCloudAdminOrders();
+      renderCloudOrderDetail(orderId);
+      showToast("生日页已发布，链接已生成。");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(result.publishedUrl).catch(() => {});
+      }
+    } catch (error) {
+      console.error("Could not publish birthday page:", error);
+      showToast("发布失败：" + error.message);
+    }
+  }
+
+  async function copyPublishedUrl(url) {
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast("专属生日页链接已复制。");
+    } catch (error) {
+      showToast("复制失败，请长按链接手动复制。");
+    }
   }
 
   async function createCloudOrder(event) {

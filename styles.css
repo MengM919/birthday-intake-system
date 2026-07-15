@@ -775,3 +775,29 @@ body.surprise-open { overflow: hidden; }
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
+.published-link {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(118, 183, 166, 0.35);
+  border-radius: var(--radius);
+  background: rgba(118, 183, 166, 0.08);
+}
+.published-link p { margin: 0; }
+.published-link input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: .8rem;
+}
+.published-link a.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

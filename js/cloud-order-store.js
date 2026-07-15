@@ -208,10 +208,18 @@
     const client = getClient();
     const { data, error } = await client
       .from("orders")
-      .select("id, order_number, recipient_name, recipient_birthday, sender_name, contact_method, contact_value, purchase_channel, status, created_at, submitted_at, plans(code, name), templates(code, name)")
+      .select("id, order_number, recipient_name, recipient_birthday, sender_name, contact_method, contact_value, purchase_channel, status, created_at, submitted_at, published_at, published_url, public_slug, plans(code, name), templates(code, name)")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data || [];
+  }
+
+  async function publishOrder(orderId) {
+    const client = getClient();
+    const { data, error } = await client.functions.invoke("publish-order", { body: { orderId } });
+    if (error) throw new Error(getError(error, "Unable to publish the birthday page."));
+    if (!data || !data.publishedUrl) throw new Error((data && data.error) || "The birthday page was not published.");
+    return data;
   }
 
   async function updateOrderStatus(orderId, status) {
@@ -232,6 +240,7 @@
     uploadFile,
     deleteFile,
     listAdminOrders,
+    publishOrder,
     updateOrderStatus
   };
 })();

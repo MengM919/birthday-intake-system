@@ -1,4 +1,4 @@
-﻿import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,11 +14,28 @@ Deno.serve(async (req) => {
     const { orderId } = await req.json();
     if (!orderId) throw new Error("缺少 orderId。");
 
-    const { data: order, error } = await service.from("orders").select("*, plan:plans(code,name,photo_limit), template:templates(code,name,palette)").eq("id", orderId).single();
+    const { data: order, error } = await service
+      .from("orders")
+      .select("*, plan:plans(code,name,photo_limit), template:templates(code,name,palette)")
+      .eq("id", orderId)
+      .single();
     if (error || !order) throw new Error("订单不存在。");
+    if (!["approved", "published"].includes(order.status)) {
+      throw new Error("请先将订单标记为已通过，再发布生日页。");
+    }
+
     const { data: content } = await service.from("order_content").select("*").eq("order_id", orderId).maybeSingle();
-    const { data: modules } = await service.from("order_modules").select("module_code, enabled, configuration, sort_order").eq("order_id", orderId).order("sort_order");
-    const { data: files } = await service.from("order_files").select("file_type, storage_bucket, storage_path, sort_order, caption").eq("order_id", orderId).eq("status", "uploaded").order("sort_order");
+    const { data: modules } = await service
+      .from("order_modules")
+      .select("module_code, enabled, configuration, sort_order")
+      .eq("order_id", orderId)
+      .order("sort_order");
+    const { data: files } = await service
+      .from("order_files")
+      .select("file_type, storage_bucket, storage_path, sort_order, caption")
+      .eq("order_id", orderId)
+      .eq("status", "uploaded")
+      .order("sort_order");
 
     const moduleMap: Record<string, unknown> = {};
     for (const mod of modules || []) {
@@ -50,17 +67,30 @@ Deno.serve(async (req) => {
       }
     };
 
-    const slug = order.public_slug || crypto.randomUUID().replaceAll("-", "").slice(0, 16);
-    const publishedUrl = `${Deno.env.get("PUBLIC_BIRTHDAY_BASE_URL") || "https://mengm919.github.io/birthday-intake-system/pages/"}${slug}/`;
+    if ((content?.access_mode || "unlisted") !== "unlisted") {
+      throw new Error("密码访问尚未上线，请先选择“仅通过专属链接访问”。");
+    }
+
+    const slug = order.public_slug || crypto.randomUUID().replaceAll("-", "").slice(0, 20);
+    const baseUrl = (Deno.env.get("PUBLIC_BIRTHDAY_BASE_URL") || "https://mengm919.github.io/birthday-intake-system/birthday.html").replace(/\/+$/, "");
+    const publishedUrl = `${baseUrl}?slug=${encodeURIComponent(slug)}`;
+    const now = new Date().toISOString();
     const { error: updateError } = await service.from("orders").update({
       status: "published",
       public_slug: slug,
       published_url: publishedUrl,
-      published_at: new Date().toISOString()
+      published_at: now
     }).eq("id", orderId);
     if (updateError) throw updateError;
-    await service.from("order_events").insert({ order_id: orderId, event_type: "published", actor_user_id: admin.id, metadata: { publishedUrl } });
-    return json({ ok: true, birthdayPageConfig, publishedUrl });
+
+    await service.from("order_events").insert({
+      order_id: orderId,
+      event_type: "published",
+      actor_user_id: admin.id,
+      metadata: { publishedUrl, templateId: order.template?.code }
+    });
+
+    return json({ ok: true, birthdayPageConfig, publishedUrl, publicSlug: slug });
   } catch (error) {
     return json({ error: error.message }, 400);
   }
