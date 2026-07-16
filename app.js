@@ -120,140 +120,104 @@
   }
 
   function bindEvents() {
-    $("#orderForm").addEventListener("input", handleFormChange);
-    $("#orderForm").addEventListener("change", handleFormChange);
-
-    $("#planGrid").addEventListener("click", (event) => {
-      const button = event.target.closest("[data-plan-id]");
-      if (!button) return;
-      if (cloudState.orderId) {
-        showToast("该订单的套餐已由商家创建时确定。");
+    const bind = (selector, eventName, handler) => {
+      const element = $(selector);
+      if (!element) {
+        console.warn("Optional interface control was not found:", selector);
         return;
       }
+      element.addEventListener(eventName, handler);
+    };
+
+    bind("#orderForm", "input", handleFormChange);
+    bind("#orderForm", "change", handleFormChange);
+    bind("#planGrid", "click", (event) => {
+      const button = event.target.closest("[data-plan-id]");
+      if (!button || cloudState.orderId) return;
       state.planId = button.dataset.planId;
       state.selectedOptionalModules = defaultOptionalModules();
       trimGalleryToPlan();
       normalizeState();
-      renderPlans();
-      renderUploads();
-      renderModules();
-      renderProgress();
-      persistDraft();
+      renderPlans(); renderUploads(); renderModules(); renderProgress(); persistDraft();
     });
-
-    $("#templateGrid").addEventListener("click", (event) => {
+    bind("#templateGrid", "click", (event) => {
       const selectButton = event.target.closest("[data-template-id]");
       const previewButton = event.target.closest("[data-preview-template]");
-      if (previewButton) {
-        openTemplatePreview(previewButton.dataset.previewTemplate);
-        return;
-      }
-      if (!selectButton) return;
-      if (cloudState.orderId) {
-        showToast("该订单的模板已由商家创建时确定。");
-        return;
-      }
+      if (previewButton) { openTemplatePreview(previewButton.dataset.previewTemplate); return; }
+      if (!selectButton || cloudState.orderId) return;
       state.templateId = selectButton.dataset.templateId;
-      renderTemplates();
-      renderProgress();
-      persistDraft();
+      renderTemplates(); renderProgress(); persistDraft();
     });
-
-    $("#prevStep").addEventListener("click", () => setStep(state.currentStep - 1));
-    $("#nextStep").addEventListener("click", () => {
-      if (state.currentStep === 8) {
-        submitOrder();
-        return;
-      }
+    bind("#prevStep", "click", () => setStep(state.currentStep - 1));
+    bind("#nextStep", "click", () => {
+      if (state.currentStep === 8) { submitOrder(); return; }
       setStep(state.currentStep + 1);
     });
-
     $$(".upload-trigger").forEach((button) => {
-      button.addEventListener("click", () => $("#" + button.dataset.fileTarget).click());
+      button.addEventListener("click", () => {
+        const input = $("#" + button.dataset.fileTarget);
+        if (input) input.click();
+      });
     });
-    $("#coverInput").addEventListener("change", (event) => loadCover(event.target.files[0]));
-    $("#galleryInput").addEventListener("change", (event) => loadGallery(event.target.files));
-    setupDropZone($("#coverDrop"), (files) => loadCover(files[0]));
-    setupDropZone($("#galleryDrop"), (files) => loadGallery(files));
-
-    $("#galleryList").addEventListener("click", async (event) => {
+    bind("#coverInput", "change", (event) => loadCover(event.target.files[0]));
+    bind("#galleryInput", "change", (event) => loadGallery(event.target.files));
+    const coverDrop = $("#coverDrop");
+    const galleryDrop = $("#galleryDrop");
+    if (coverDrop) setupDropZone(coverDrop, (files) => loadCover(files[0]));
+    if (galleryDrop) setupDropZone(galleryDrop, (files) => loadGallery(files));
+    bind("#galleryList", "click", async (event) => {
       const button = event.target.closest("[data-remove-photo]");
       if (!button) return;
       const photo = state.media.gallery.find((item) => item.id === button.dataset.removePhoto);
       state.media.gallery = state.media.gallery.filter((item) => item.id !== button.dataset.removePhoto);
-      renderUploads();
-      renderProgress();
-      persistDraft();
+      renderUploads(); renderProgress(); persistDraft();
       if (photo && photo.storageRecord && cloudState.orderId) {
-        try {
-          await window.BirthdayCloudOrders.deleteFile(photo.storageRecord);
-        } catch (error) {
-          showToast("照片已从页面移除，但云端删除失败：" + error.message);
-        }
+        try { await window.BirthdayCloudOrders.deleteFile(photo.storageRecord); }
+        catch (error) { console.error("Cloud photo deletion failed:", error); }
       }
     });
-
-    $("#generateBlessing").addEventListener("click", generateBlessings);
-    $("#blessingCandidates").addEventListener("click", (event) => {
+    bind("#generateBlessing", "click", generateBlessings);
+    bind("#blessingCandidates", "click", (event) => {
       const button = event.target.closest("[data-use-blessing]");
       if (!button) return;
       state.content.headline = button.dataset.useBlessing;
-      syncFormFromState();
-      renderProgress();
-      persistDraft();
-      showToast("已填入首页主祝福");
+      syncFormFromState(); renderProgress(); persistDraft();
     });
-
-    $("#moduleGrid").addEventListener("click", (event) => {
+    bind("#moduleGrid", "click", (event) => {
       const button = event.target.closest("[data-module-toggle]");
-      if (!button) return;
-      toggleModule(button.dataset.moduleToggle);
+      if (button) toggleModule(button.dataset.moduleToggle);
     });
-
-    $("#moduleFields").addEventListener("input", handleModuleFieldChange);
-    $("#moduleFields").addEventListener("change", handleModuleFieldChange);
-    $("#moduleFields").addEventListener("click", handleModuleAction);
-
-    $("#submitOrder").addEventListener("click", submitOrder);
-    const copyJsonButton = $("#copyJson");
-    if (copyJsonButton) copyJsonButton.addEventListener("click", copyJson);
-
-    $$(".view-button").forEach((button) => {
-      button.addEventListener("click", () => switchView(button.dataset.view));
-    });
-
-    $("#unlockAdmin").addEventListener("click", unlockAdmin);
-    $("#adminCreateOrderForm").addEventListener("submit", createCloudOrder);
-    $("#adminSearch").addEventListener("input", renderAdminOrders);
-    $("#adminStatusFilter").addEventListener("change", renderAdminOrders);
-    $("#adminPlanFilter").addEventListener("change", renderAdminOrders);
-    $("#adminTemplateFilter").addEventListener("change", renderAdminOrders);
-    $("#exportAllOrders").addEventListener("click", exportAllOrders);
-    $("#adminOrderList").addEventListener("click", (event) => {
+    bind("#moduleFields", "input", handleModuleFieldChange);
+    bind("#moduleFields", "change", handleModuleFieldChange);
+    bind("#moduleFields", "click", handleModuleAction);
+    bind("#submitOrder", "click", submitOrder);
+    bind("#copyJson", "click", copyJson);
+    $$(".view-button").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
+    bind("#unlockAdmin", "click", unlockAdmin);
+    bind("#adminCreateOrderForm", "submit", createCloudOrder);
+    bind("#adminSearch", "input", renderAdminOrders);
+    bind("#adminStatusFilter", "change", renderAdminOrders);
+    bind("#adminPlanFilter", "change", renderAdminOrders);
+    bind("#adminTemplateFilter", "change", renderAdminOrders);
+    bind("#exportAllOrders", "click", exportAllOrders);
+    bind("#adminOrderList", "click", (event) => {
       const cloudButton = event.target.closest("[data-cloud-order]");
-      if (cloudButton) {
-        renderCloudOrderDetail(cloudButton.dataset.cloudOrder);
-        return;
-      }
+      if (cloudButton) { renderCloudOrderDetail(cloudButton.dataset.cloudOrder); return; }
       const button = event.target.closest("[data-open-order]");
       if (button) renderOrderDetail(button.dataset.openOrder);
     });
-    $("#adminOrderDetail").addEventListener("click", (event) => {
+    bind("#adminOrderDetail", "click", (event) => {
       const publishButton = event.target.closest("[data-publish-order]");
-      if (publishButton) {
-        publishCloudOrder(publishButton.dataset.publishOrder);
-        return;
-      }
+      if (publishButton) { publishCloudOrder(publishButton.dataset.publishOrder); return; }
       const copyButton = event.target.closest("[data-copy-published]");
-      if (copyButton) {
-        copyPublishedUrl(copyButton.dataset.copyPublished);
-        return;
-      }
+      if (copyButton) { copyPublishedUrl(copyButton.dataset.copyPublished); return; }
       const button = event.target.closest("[data-status]");
       if (button) updateOrderStatus(button.dataset.orderId, button.dataset.status);
     });
-
-    $("#closeTemplatePreview").addEventListener("click", () => $("#templatePreviewDialog").close());
+    bind("#closeTemplatePreview", "click", () => {
+      const dialog = $("#templatePreviewDialog");
+      if (dialog) dialog.close();
+    });
   }
 
   async function initCloudOrder() {
