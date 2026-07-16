@@ -192,7 +192,6 @@
     bind("#moduleFields", "click", handleModuleAction);
     bind("#submitOrder", "click", submitOrder);
     bind("#copyJson", "click", copyJson);
-    $$(".view-button").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
     bind("#unlockAdmin", "click", unlockAdmin);
     bind("#adminCreateOrderForm", "submit", createCloudOrder);
     bind("#adminSearch", "input", renderAdminOrders);
@@ -1345,11 +1344,20 @@
   }
 
   function switchView(view) {
+    const isAdmin = view === "admin";
     $$(".view-button").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
-    $("#intakeView").classList.toggle("hidden", view !== "intake");
-    $("#intakeProgress").classList.toggle("hidden", view !== "intake");
-    $("#adminView").classList.toggle("hidden", view !== "admin");
-    if (view === "admin") renderAdminOrders();
+    const intakeView = $("#intakeView");
+    const intakeProgress = $("#intakeProgress");
+    const adminView = $("#adminView");
+    if (intakeView) intakeView.classList.toggle("hidden", isAdmin);
+    if (intakeProgress) intakeProgress.classList.toggle("hidden", isAdmin);
+    if (adminView) adminView.classList.toggle("hidden", !isAdmin);
+    if (!isAdmin) return;
+    try {
+      renderAdminOrders();
+    } catch (error) {
+      console.error("Admin view rendering failed:", error);
+    }
   }
 
   function cloudEnabled() {
@@ -1721,4 +1729,12 @@
   }
 
   document.addEventListener("DOMContentLoaded", init);
+
+  // Keep the merchant entry available even if an optional intake control is absent.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest(".view-button[data-view]");
+    if (!button) return;
+    event.preventDefault();
+    switchView(button.dataset.view);
+  });
 })();
