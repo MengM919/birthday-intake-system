@@ -1152,9 +1152,9 @@
     const tone = toneMap[state.content.aiTone] || "温柔";
     const shortFacts = facts.length > 46 ? facts.slice(0, 46) + "…" : facts;
     const chosen = [
-      `生日快乐，${name}。因为${shortFacts}，所以今天这份${tone}的偏爱只想送给你。`,
-      `把今天所有祝福都送给${name}，愿你作为我很重要的${relation}，新一岁继续被爱、被好运接住。`,
-      `这一天属于${name}，也属于那些关于“${shortFacts}”的美好回忆。愿你一直闪闪发光。`
+      "\u4eca\u5929\u7684\u504f\u7231\u90fd\u7ed9" + name,
+      name + "\uff0c\u751f\u65e5\u5feb\u4e50\u5440\uff01",
+      "\u613f" + name + "\u6bcf\u5929\u90fd\u95ea\u95ea\u53d1\u5149"
     ];
     $("#blessingCandidates").innerHTML = chosen.map((text, index) => `
       <article>
