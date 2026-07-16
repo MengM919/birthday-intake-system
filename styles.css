@@ -801,3 +801,26 @@ body.surprise-open { overflow: hidden; }
   justify-content: center;
   text-decoration: none;
 }
+
+/* Clear product-selection hierarchy for the customer intake flow. */
+.plan-grid { gap: 16px; margin-top: 18px; }
+.plan-card { min-height: 208px; align-content: start; padding: 18px; gap: 10px; background: linear-gradient(145deg, #fffdf9, #fff5f1); }
+.plan-card strong { font-size: 1.16rem; }
+.plan-card small { display: block; line-height: 1.55; }
+.plan-card em { padding-top: 4px; border-top: 1px dashed var(--line); }
+.module-grid { gap: 16px; margin-top: 18px; }
+.module-card { min-height: 152px; padding: 16px; align-content: start; background: #fffdf9; }
+.module-card strong { font-size: 1.08rem; }
+.module-card span { line-height: 1.55; }
+.module-card em { margin-top: auto; }
+.upload-layout { gap: 18px; }
+.upload-box { min-height: 210px; padding: 18px; background: #fffdf9; }
+.upload-box > p { margin: 0; color: var(--muted); }
+#galleryLimitText { color: var(--primary-dark); font-weight: 850; }
+.module-fields:empty { display: none; }
+@media (max-width: 759px) {
+  .plan-grid, .module-grid { grid-template-columns: 1fr; }
+  .plan-card { min-height: auto; }
+  .module-card { min-height: 136px; }
+  .step-head { margin-bottom: 22px; }
+}

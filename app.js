@@ -103,6 +103,7 @@
       renderPlans();
       renderTemplates();
       syncFormFromState();
+      hideFixedMusicInputs();
       setStep(state.currentStep);
       renderUploads();
       renderModules();
@@ -449,8 +450,7 @@
   }
 
   function defaultOptionalModules() {
-    const plan = currentPlan();
-    return (plan.optionalModulePool || []).slice(0, plan.optionalPickCount || 0);
+    return [];
   }
 
   function activeModuleIds() {
@@ -459,20 +459,14 @@
   }
 
   function renderPlans() {
-    $("#planGrid").innerHTML = plans.map((plan) => {
-      const active = plan.id === state.planId ? "selected" : "";
-      const optionalText = plan.optionalPickCount
-        ? `可选 ${plan.optionalModulePool.length} 选 ${plan.optionalPickCount}`
-        : "套餐模块固定";
-      return `
-        <button class="plan-card ${active}" type="button" data-plan-id="${plan.id}">
-          <span>${escapeHTML(plan.id)}</span>
-          <strong>${escapeHTML(plan.name)}</strong>
-          <b>￥${plan.priceCny}</b>
-          <small>${escapeHTML(optionalText)} · 相册 ${plan.galleryLimit} 张</small>
-          <em>${escapeHTML(plan.summary)}</em>
-        </button>
-      `;
+    const grid = $("#planGrid");
+    if (!grid) return;
+    grid.innerHTML = plans.map((plan) => {
+      const selected = plan.id === state.planId ? "selected" : "";
+      const features = plan.id === "P01"
+        ? "\u4e3b\u795d\u798f\u8bed\u00b7\u5c01\u9762\u56fe\u00b7\u5012\u8ba1\u65f6\u00b7\u4e0d\u9650\u76f8\u518c\u00b7\u516c\u5f00\u795d\u798f\u5899"
+        : "\u57fa\u7840\u5185\u5bb9 + \u53ef\u9009\u8bb8\u613f\u74f6\u3001\u672a\u6765\u4fe1\u7bb1\u3001\u4eca\u65e5\u8fd0\u52bf\u3001\u751f\u65e5\u76f2\u76d2\u3001\u80cc\u666f\u97f3\u4e50";
+      return '<button class="plan-card ' + selected + '" type="button" data-plan-id="' + plan.id + '"><span>' + (plan.id === "P01" ? "\u57fa\u7840\u5fc3\u610f\u6b3e" : "\u60ca\u559c\u5347\u7ea7\u6b3e") + '</span><strong>' + escapeHTML(plan.name) + '</strong><b>\u00a5' + plan.priceCny + '</b><small>' + features + '</small><em>' + escapeHTML(plan.summary) + '</em></button>';
     }).join("");
   }
 
@@ -619,10 +613,16 @@
     ];
   }
 
+  function hideFixedMusicInputs() {
+    ["bgmMode", "musicId", "songName", "artist", "uploadedAudioName"].forEach((name) => {
+      const input = $("[name=\"" + name + "\"]");
+      const field = input && input.closest(".field");
+      if (field) field.classList.add("hidden");
+    });
+  }
+
   function hasMusicInfo() {
-    if (state.music.bgmMode === "library") return Boolean(state.music.musicId);
-    if (state.music.bgmMode === "manual") return Boolean(state.music.songName.trim());
-    return Boolean(state.music.uploadedAudioName.trim());
+    return true;
   }
 
   function hasAnyText(list, key) {
@@ -645,12 +645,10 @@
 
   async function loadGallery(files) {
     const plan = currentPlan();
-    const slots = plan.galleryLimit < 0 ? Array.from(files || []).length : Math.max(0, plan.galleryLimit - state.media.gallery.length);
-    const selected = Array.from(files || []).slice(0, slots);
-    if (!selected.length) {
-      showToast("当前套餐最多上传 " + plan.galleryLimit + " 张相册照片");
-      return;
-    }
+    const allFiles = Array.from(files || []);
+    const slots = plan.galleryLimit < 0 ? allFiles.length : Math.max(0, plan.galleryLimit - state.media.gallery.length);
+    const selected = allFiles.slice(0, slots);
+    if (!selected.length) { showToast("\u76f8\u518c\u5df2\u8fbe\u4e0a\u4f20\u4e0a\u9650\u3002"); return; }
     for (const file of selected) {
       try {
         const photo = await imageToData(file, 900);
@@ -658,9 +656,7 @@
         renderUploads();
         renderProgress();
         if (cloudState.orderId) await uploadCloudMedia(photo, file, "gallery", state.media.gallery.length);
-      } catch (error) {
-        showToast(error.message);
-      }
+      } catch (error) { showToast(error.message); }
     }
     renderUploads();
     renderProgress();
@@ -745,17 +741,19 @@
 
   function renderUploads() {
     const plan = currentPlan();
-    $("#galleryLimitText").textContent = plan.galleryLimit < 0 ? (state.media.gallery.length + " / Unlimited") : (state.media.gallery.length + " / " + plan.galleryLimit);
-    $("#coverPreview").innerHTML = state.media.cover
-      ? `<img src="${state.media.cover.dataUrl}" alt="封面图预览"><p>${escapeHTML(state.media.cover.name)}</p>`
-      : `<span>还没有封面图</span>`;
-    $("#galleryList").innerHTML = state.media.gallery.map((photo) => `
-      <figure>
-        <img src="${photo.dataUrl}" alt="${escapeHTML(photo.name)}">
-        <figcaption>${escapeHTML(photo.name)}</figcaption>
-        <button type="button" data-remove-photo="${photo.id}" aria-label="删除图片">×</button>
-      </figure>
-    `).join("");
+    const label = plan.galleryLimit < 0
+      ? "\u5df2\u4e0a\u4f20 " + state.media.gallery.length + " \u5f20\uff0c\u76f8\u518c\u4e0d\u9650\u5f20\u6570"
+      : "\u5df2\u4e0a\u4f20 " + state.media.gallery.length + " / " + plan.galleryLimit + " \u5f20";
+    const galleryLimit = $("#galleryLimitText");
+    if (galleryLimit) galleryLimit.textContent = label;
+    const cover = $("#coverPreview");
+    if (cover) cover.innerHTML = state.media.cover
+      ? '<img src="' + state.media.cover.dataUrl + '" alt="\u5c01\u9762\u56fe\u9884\u89c8"><p>' + escapeHTML(state.media.cover.name) + '</p>'
+      : '<span>\u8fd8\u6ca1\u6709\u4e0a\u4f20\u5c01\u9762\u56fe</span>';
+    const list = $("#galleryList");
+    if (list) list.innerHTML = state.media.gallery.map((photo) =>
+      '<figure><img src="' + photo.dataUrl + '" alt="' + escapeAttr(photo.name) + '"><figcaption>' + escapeHTML(photo.name) + '</figcaption><button type="button" data-remove-photo="' + photo.id + '" aria-label="\u5220\u9664\u56fe\u7247">\u00d7</button></figure>'
+    ).join("");
   }
 
   function trimGalleryToPlan() {
@@ -769,29 +767,23 @@
   function renderModules() {
     normalizeState();
     const plan = currentPlan();
-    const activeIds = activeModuleIds();
-    const optionalPool = plan.optionalModulePool || [];
-    $("#moduleRuleText").textContent = optionalPool.length
-      ? `${plan.name}：从 ${optionalPool.length} 个加购模块中选择 ${plan.optionalPickCount} 个。`
-      : `${plan.name}：模块已由套餐固定。`;
-
-    const allIds = unique([...(plan.includedModules || []), ...optionalPool]);
-    $("#moduleGrid").innerHTML = allIds.map((id) => {
+    const optional = plan.optionalModulePool || [];
+    const active = activeModuleIds();
+    const rule = $("#moduleRuleText");
+    if (rule) rule.textContent = optional.length ? "\u5347\u7ea7\u6b3e\u53ef\u4ee5\u81ea\u7531\u52fe\u9009\u60f3\u8981\u7684\u529f\u80fd\uff0c\u4e0d\u9009\u4e5f\u53ef\u4ee5\u7ee7\u7eed\u3002" : "\u57fa\u7840\u6b3e\u5df2\u5305\u542b\u56de\u5fc6\u76f8\u518c\u3001\u795d\u798f\u5899\u548c\u751f\u65e5\u5012\u8ba1\u65f6\u3002";
+    const ids = unique([...(plan.includedModules || []), ...optional]);
+    const grid = $("#moduleGrid");
+    if (grid) grid.innerHTML = ids.map((id) => {
       const module = moduleCatalog[id];
       if (!module) return "";
       const included = (plan.includedModules || []).includes(id);
-      const selected = activeIds.includes(id);
-      return `
-        <button class="module-card ${selected ? "selected" : ""}" type="button" data-module-toggle="${id}" ${included ? "aria-disabled=\"true\"" : ""}>
-          <strong>${escapeHTML(module.name)}</strong>
-          <span>${escapeHTML(module.short)}</span>
-          <em>${included ? "套餐包含" : selected ? "已选择" : "可选"}</em>
-        </button>
-      `;
+      const selected = active.includes(id);
+      const status = included ? "\u5957\u9910\u5df2\u5305\u542b" : (selected ? "\u5df2\u6dfb\u52a0" : "\u70b9\u51fb\u6dfb\u52a0");
+      return '<button class="module-card ' + (selected ? "selected" : "") + '" type="button" data-module-toggle="' + id + '"' + (included ? ' aria-disabled="true"' : "") + '><strong>' + escapeHTML(module.name) + '</strong><span>' + escapeHTML(module.short) + '</span><em>' + status + '</em></button>';
     }).join("");
-
-    const editableIds = activeIds.filter((id) => !["gallery", "bgm", "countdown"].includes(id));
-    $("#moduleFields").innerHTML = editableIds.map(renderModuleFields).join("");
+    const editable = active.filter((id) => !["gallery", "messageWall", "countdown", "surpriseBox", "dailyLuck", "bgm"].includes(id));
+    const fields = $("#moduleFields");
+    if (fields) fields.innerHTML = editable.map(renderModuleFields).join("");
   }
 
   function toggleModule(id) {
@@ -1133,48 +1125,38 @@
     const plan = currentPlan();
     const template = currentTemplate();
     const countdown = getBirthdayCountdown(state.recipient.birthday);
-    $("#reviewSummary").innerHTML = [
-      ["套餐", `${plan.name} / ￥${plan.priceCny}`],
-      ["模板", `${template.id} ${template.name}`],
-      ["寿星", state.recipient.recipientName || "未填写"],
-      ["生日", state.recipient.birthday || "未填写"],
-      ["倒计时", countdown ? `${countdown.targetYear} 年生日还有 ${countdown.days} 天` : "未填写生日"],
-      ["封面图", state.media.cover ? state.media.cover.name : "未上传"],
-      ["相册", `${state.media.gallery.length} / ${plan.galleryLimit}`],
-      ["已开模块", activeModuleIds().map((id) => moduleCatalog[id] ? moduleCatalog[id].name : id).join("、")]
-    ].map(([label, value]) => `<div><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`).join("");
-
+    const galleryText = plan.galleryLimit < 0 ? state.media.gallery.length + " \u5f20\uff08\u4e0d\u9650\u5f20\uff09" : state.media.gallery.length + " / " + plan.galleryLimit + " \u5f20";
+    const rows = [
+      ["\u5957\u9910", plan.name + " / \u00a5" + plan.priceCny],
+      ["\u6a21\u677f", template.id + " " + template.name],
+      ["\u5bff\u661f", state.recipient.recipientName || "\u672a\u586b\u5199"],
+      ["\u751f\u65e5", state.recipient.birthday || "\u672a\u586b\u5199"],
+      ["\u751f\u65e5\u5012\u8ba1\u65f6", countdown ? "\u8ddd\u79bb\u4e0b\u4e00\u6b21\u751f\u65e5\u8fd8\u6709 " + countdown.days + " \u5929" : "\u672a\u586b\u5199"],
+      ["\u5c01\u9762\u56fe", state.media.cover ? state.media.cover.name : "\u672a\u4e0a\u4f20"],
+      ["\u56de\u5fc6\u76f8\u518c", galleryText],
+      ["\u5df2\u9009\u529f\u80fd", activeModuleIds().map((id) => moduleCatalog[id] ? moduleCatalog[id].name : id).join("\u3001")]
+    ];
+    const summary = $("#reviewSummary");
+    if (summary) summary.innerHTML = rows.map((row) => '<div><span>' + escapeHTML(row[0]) + '</span><strong>' + escapeHTML(row[1]) + '</strong></div>').join("");
     const notices = validateOrder(false);
-    $("#reviewNotices").innerHTML = notices.length
-      ? notices.map((notice) => `<p class="notice">${escapeHTML(notice)}</p>`).join("")
-      : `<p class="notice ok">资料看起来完整，可以生成订单 JSON。</p>`;
+    const noticeList = $("#reviewNotices");
+    if (noticeList) noticeList.innerHTML = notices.length
+      ? notices.map((notice) => '<p class="notice">' + escapeHTML(notice) + '</p>').join("")
+      : '<p class="notice ok">\u8d44\u6599\u5df2\u51c6\u5907\u597d\uff0c\u70b9\u51fb\u63d0\u4ea4\u5373\u53ef\u53d1\u9001\u7ed9\u5546\u5bb6\u3002</p>';
   }
 
   function validateOrder(strict = true) {
     const notices = [];
     const plan = currentPlan();
-    if (!state.order.contactValue.trim()) notices.push("请填写联系方式。");
-    if (!state.recipient.recipientName.trim()) notices.push("请填写寿星姓名 / 昵称。");
-    if (!state.recipient.birthday) notices.push("请填写生日日期。");
-    if (!state.sender.senderAnonymous && !state.sender.senderName.trim()) notices.push("请填写送礼人昵称，或勾选匿名。");
-    if (!state.media.cover) notices.push("请上传封面图。");
-    if (!state.media.gallery.length) notices.push("请至少上传 1 张回忆照片。");
-    if (state.media.gallery.length > plan.galleryLimit) notices.push(`当前套餐最多 ${plan.galleryLimit} 张照片。`);
-    if (!state.content.headline.trim()) notices.push("请填写首页主祝福。");
-    if (!hasMusicInfo()) notices.push("请补充背景音乐信息。");
-    if (!state.privacy.privacyConfirmed) notices.push("请确认隐私说明。");
-    if (plan.optionalPickMin && state.selectedOptionalModules.length < plan.optionalPickMin) {
-      notices.push(`${plan.name} 需要选择 ${plan.optionalPickCount} 个加购模块。`);
-    }
-    const modules = activeModuleIds();
-    if (modules.includes("messageWall") && !hasAnyText(state.modules.messageWall, "text")) notices.push("留言墙至少需要 1 条留言内容。");
-    if (modules.includes("surpriseBox")) {
-      const surprise = primarySurpriseBox();
-      if (!surprise.imageryCode) notices.push("请选择惊喜盲盒意象。");
-      if (!surprise.surpriseMessage.trim()) notices.push("惊喜盲盒需要填写打开后看到的专属祝福。");
-    }
-    if (modules.includes("playlist") && !hasAnyText(state.modules.playlist, "song")) notices.push("生日歌单至少需要 1 首歌曲。");
-    if (modules.includes("hiddenEgg") && !state.modules.hiddenEgg.content.trim()) notices.push("隐藏彩蛋需要填写彩蛋内容。");
+    if (!state.order.contactValue.trim()) notices.push("\u8bf7\u586b\u5199\u8054\u7cfb\u65b9\u5f0f\u3002");
+    if (!state.recipient.recipientName.trim()) notices.push("\u8bf7\u586b\u5199\u5bff\u661f\u59d3\u540d\u6216\u6635\u79f0\u3002");
+    if (!state.recipient.birthday) notices.push("\u8bf7\u586b\u5199\u751f\u65e5\u65e5\u671f\u3002");
+    if (!state.sender.senderAnonymous && !state.sender.senderName.trim()) notices.push("\u8bf7\u586b\u5199\u9001\u793c\u4eba\u6635\u79f0\uff0c\u6216\u52fe\u9009\u533f\u540d\u3002");
+    if (!state.media.cover) notices.push("\u8bf7\u4e0a\u4f20\u5c01\u9762\u56fe\u3002");
+    if (!state.media.gallery.length) notices.push("\u8bf7\u81f3\u5c11\u4e0a\u4f20 1 \u5f20\u56de\u5fc6\u7167\u7247\u3002");
+    if (plan.galleryLimit >= 0 && state.media.gallery.length > plan.galleryLimit) notices.push("\u56de\u5fc6\u76f8\u518c\u8d85\u51fa\u5957\u9910\u4e0a\u9650\u3002");
+    if (!state.content.headline.trim()) notices.push("\u8bf7\u586b\u5199\u9996\u9875\u4e3b\u795d\u798f\u8bed\u3002");
+    if (!state.privacy.privacyConfirmed) notices.push("\u8bf7\u52fe\u9009\u9690\u79c1\u8bf4\u660e\u540e\u518d\u63d0\u4ea4\u3002");
     if (strict && notices.length) showToast(notices[0]);
     return notices;
   }
@@ -1196,8 +1178,8 @@
         saveOrder(order);
         showToast("订单 JSON 已生成；当前仍是本地演示模式。");
       }
-      $("#jsonOutput").hidden = false;
-      $("#jsonPreview").textContent = JSON.stringify(order, null, 2);
+      const output = $("#jsonOutput");
+      if (output) output.hidden = true;
       renderAdminOrders();
     } catch (error) {
       console.error("Order submission failed:", error);
@@ -1642,12 +1624,7 @@
   }
 
   function copyJson() {
-    const text = $("#jsonPreview").textContent;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => showToast("JSON 已复制"));
-    } else {
-      showToast("当前浏览器不支持一键复制，可长按选择 JSON");
-    }
+    showToast("\u8ba2\u5355\u5df2\u4fdd\u5b58\uff0c\u987e\u5ba2\u65e0\u9700\u67e5\u770b JSON\u3002");
   }
 
   function openTemplatePreview(templateId) {
