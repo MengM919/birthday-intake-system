@@ -681,7 +681,7 @@
 
   async function loadGallery(files) {
     const plan = currentPlan();
-    const slots = Math.max(0, plan.galleryLimit - state.media.gallery.length);
+    const slots = plan.galleryLimit < 0 ? Array.from(files || []).length : Math.max(0, plan.galleryLimit - state.media.gallery.length);
     const selected = Array.from(files || []).slice(0, slots);
     if (!selected.length) {
       showToast("当前套餐最多上传 " + plan.galleryLimit + " 张相册照片");
@@ -781,7 +781,7 @@
 
   function renderUploads() {
     const plan = currentPlan();
-    $("#galleryLimitText").textContent = `已上传 ${state.media.gallery.length} / ${plan.galleryLimit}`;
+    $("#galleryLimitText").textContent = plan.galleryLimit < 0 ? (state.media.gallery.length + " / Unlimited") : (state.media.gallery.length + " / " + plan.galleryLimit);
     $("#coverPreview").innerHTML = state.media.cover
       ? `<img src="${state.media.cover.dataUrl}" alt="封面图预览"><p>${escapeHTML(state.media.cover.name)}</p>`
       : `<span>还没有封面图</span>`;
@@ -796,7 +796,7 @@
 
   function trimGalleryToPlan() {
     const limit = currentPlan().galleryLimit;
-    if (state.media.gallery.length > limit) {
+    if (limit >= 0 && state.media.gallery.length > limit) {
       state.media.gallery = state.media.gallery.slice(0, limit);
       showToast(`已按新套餐保留前 ${limit} 张相册照片`);
     }
@@ -1199,7 +1199,7 @@
     if (!state.content.headline.trim()) notices.push("请填写首页主祝福。");
     if (!hasMusicInfo()) notices.push("请补充背景音乐信息。");
     if (!state.privacy.privacyConfirmed) notices.push("请确认隐私说明。");
-    if ((plan.optionalModulePool || []).length && state.selectedOptionalModules.length !== plan.optionalPickCount) {
+    if (plan.optionalPickMin && state.selectedOptionalModules.length < plan.optionalPickMin) {
       notices.push(`${plan.name} 需要选择 ${plan.optionalPickCount} 个加购模块。`);
     }
     const modules = activeModuleIds();
