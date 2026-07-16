@@ -215,7 +215,8 @@
     $("#moduleFields").addEventListener("click", handleModuleAction);
 
     $("#submitOrder").addEventListener("click", submitOrder);
-    $("#copyJson").addEventListener("click", copyJson);
+    const copyJsonButton = $("#copyJson");
+    if (copyJsonButton) copyJsonButton.addEventListener("click", copyJson);
 
     $$(".view-button").forEach((button) => {
       button.addEventListener("click", () => switchView(button.dataset.view));
