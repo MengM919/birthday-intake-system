@@ -1,4 +1,4 @@
-﻿import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -48,7 +48,10 @@ async function requireUser(req: Request, service: any) {
 }
 
 async function hashToken(token: string) {
-  const secret = Deno.env.get("CLAIM_TOKEN_SECRET") || "dev-only-change-me";
+  const secret = Deno.env.get("CLAIM_TOKEN_SECRET");
+  if (!secret) {
+    throw new Error("订单领取服务尚未完成安全配置，请联系商家处理。");
+  }
   const bytes = new TextEncoder().encode(`${secret}:${token}`);
   const hash = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");

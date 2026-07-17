@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="robots" content="noindex,nofollow,noarchive">
+    <title>生日网页制作台</title>
+    <link rel="stylesheet" href="admin.css?v=20260717-six-step-r4">
+  </head>
+  <body>
+    <main class="admin-shell">
+      <section id="adminLogin" class="login-card">
+        <p class="eyebrow">BIRTHDAY STUDIO</p>
+        <h1>生日网页制作台</h1>
+        <p>仅限已授予商家权限的账号登录。客户填写资料不会在这里公开展示。</p>
+        <form id="adminLoginForm" class="stack-form">
+          <label>邮箱<input name="email" type="email" required autocomplete="email" placeholder="商家账号邮箱"></label>
+          <label>密码<input name="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label>
+          <p id="loginError" class="form-error" aria-live="polite"></p>
+          <button class="primary-button" type="submit">安全登录</button>
+        </form>
+      </section>
+
+      <section id="adminWorkspace" hidden>
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">BIRTHDAY STUDIO</p>
+            <h1>订单制作台</h1>
+            <p id="adminIdentity">正在检查商家权限…</p>
+          </div>
+          <div class="header-actions">
+            <a class="quiet-button" href="index.html">客户填写页</a>
+            <button id="adminSignOut" class="quiet-button" type="button">退出登录</button>
+          </div>
+        </header>
+
+        <section class="create-panel">
+          <div class="section-title"><div><p class="eyebrow">NEW ORDER</p><h2>新建一份专属订单</h2></div><p>创建后复制领取链接发送给客户。套餐在客户填写期间保持锁定。</p></div>
+          <form id="createOrderForm" class="create-grid">
+            <label>套餐<select name="planCode" required><option value="basic_166">基础心意款 ¥16.6</option><option value="upgrade_288">惊喜升级款 ¥28.8</option></select></label>
+            <label>购买渠道<select name="purchaseChannel"><option value="manual">商家手动创建</option><option value="taobao">淘宝</option><option value="xianyu">闲鱼</option><option value="wechat">微信</option><option value="xiaohongshu">小红书</option></select></label>
+            <label>外部订单号 <span>可选</span><input name="externalOrderNumber" maxlength="80" placeholder="便于和渠道订单对应"></label>
+            <button class="primary-button" type="submit">创建领取链接</button>
+          </form>
+          <div id="claimResult" class="claim-result" hidden></div>
+        </section>
+
+        <section class="orders-layout">
+          <div class="orders-panel">
+            <div class="section-title compact"><div><p class="eyebrow">ORDERS</p><h2>制作队列</h2></div><button id="refreshOrders" class="quiet-button" type="button">刷新</button></div>
+            <div class="filter-row">
+              <input id="orderSearch" type="search" placeholder="搜索订单号、寿星或送礼人">
+              <select id="statusFilter"><option value="all">全部状态</option><option value="created">待领取</option><option value="claimed">待填写</option><option value="draft">填写中</option><option value="submitted">已提交</option><option value="reviewing">审核中</option><option value="needs_revision">需修改</option><option value="approved">已批准</option><option value="generating">生成中</option><option value="published">已发布</option><option value="cancelled">已取消</option></select>
+            </div>
+            <p id="ordersState" class="table-state">正在读取订单…</p>
+            <div id="ordersTable" class="orders-table" role="list"></div>
+          </div>
+
+          <aside id="orderDetail" class="detail-panel" aria-live="polite">
+            <div class="empty-detail"><strong>选择一个订单</strong><span>这里会显示客户提交的资料、照片和制作操作。</span></div>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <template id="claimTemplate">
+      <div class="claim-copy"><strong>订单已创建</strong><span class="claim-order-number"></span><p>把下面的专属链接发送给客户。链接内包含一次性领取凭证，请不要公开发布。</p><div class="copy-row"><input class="claim-url" readonly><button class="copy-claim" type="button">复制链接</button></div></div>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config/plans.js?v=20260717-six-step-r4"></script>
+    <script src="config/templates.js?v=20260717-six-step-r4"></script>
+    <script src="config/modules.js?v=20260717-six-step-r4"></script>
+    <script src="config/supabase.js?v=20260717-six-step-r4"></script>
+    <script src="js/supabase-client.js?v=20260717-six-step-r4"></script>
+    <script src="js/storage.js?v=20260717-six-step-r4"></script>
+    <script src="js/cloud-order-store.js?v=20260717-six-step-r4"></script>
+    <script src="js/admin-app.js?v=20260717-six-step-r4"></script>
+  </body>
+</html>

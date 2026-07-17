@@ -1,28 +1,24 @@
 window.BD_PLANS = [
   {
-    id: "P01",
+    id: "basic_166",
+    code: "basic_166",
     name: "\u57fa\u7840\u5fc3\u610f\u6b3e",
     priceCny: 16.6,
-    galleryLimit: -1,
+    galleryLimit: 12,
     includedModules: ["gallery", "messageWall", "countdown"],
     optionalModulePool: [],
-    optionalPickCount: 0,
-    optionalPickMin: 0,
-    allowMultiContributor: true,
-    priorityProduction: false,
-    summary: "\u4e3b\u795d\u798f\u8bed\u3001\u5c01\u9762\u56fe\u3001\u751f\u65e5\u5012\u8ba1\u65f6\u3001\u4e0d\u9650\u5f20\u56de\u5fc6\u76f8\u518c\u548c\u516c\u5f00\u795d\u798f\u5899\u3002"
+    summary: "\u4e3b\u795d\u798f\u3001\u5c01\u9762\u3001\u751f\u65e5\u5012\u8ba1\u65f6\u3001\u56de\u5fc6\u76f8\u518c\u4e0e\u516c\u5f00\u795d\u798f\u5899\u3002",
+    features: ["\u6700\u591a 12 \u5f20\u56de\u5fc6\u7167\u7247", "\u76f8\u518c\u9996\u5c4f\u7cbe\u9009 8 \u5f20", "\u6240\u6709\u8bbf\u5ba2\u90fd\u53ef\u7559\u4e0b\u795d\u798f"]
   },
   {
-    id: "P02",
+    id: "upgrade_288",
+    code: "upgrade_288",
     name: "\u60ca\u559c\u5347\u7ea7\u6b3e",
     priceCny: 28.8,
-    galleryLimit: -1,
+    galleryLimit: 30,
     includedModules: ["gallery", "messageWall", "countdown"],
     optionalModulePool: ["wishBottle", "futureMailbox", "dailyLuck", "surpriseBox", "bgm"],
-    optionalPickCount: 0,
-    optionalPickMin: 0,
-    allowMultiContributor: true,
-    priorityProduction: true,
-    summary: "\u5728\u57fa\u7840\u6b3e\u4e4b\u4e0a\uff0c\u53ef\u81ea\u7531\u52fe\u9009\u8bb8\u613f\u74f6\u3001\u672a\u6765\u4fe1\u7bb1\u3001\u4eca\u65e5\u8fd0\u52bf\u3001\u751f\u65e5\u76f2\u76d2\u548c\u56fa\u5b9a\u80cc\u666f\u97f3\u4e50\u3002"
+    summary: "\u5305\u542b\u57fa\u7840\u5185\u5bb9\uff0c\u53ef\u6309\u9700\u5f00\u542f\u4e94\u4efd\u5df2\u542b\u7684\u751f\u65e5\u60ca\u559c\u3002",
+    features: ["\u6700\u591a 30 \u5f20\u56de\u5fc6\u7167\u7247", "\u8bb8\u613f\u74f6\u3001\u672a\u6765\u4fe1\u7bb1\u3001\u4eca\u65e5\u597d\u8fd0", "\u60ca\u559c\u76f2\u76d2\u4e0e\u56fa\u5b9a\u80cc\u666f\u97f3\u4e50"]
   }
 ];

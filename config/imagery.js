@@ -1,74 +1,10 @@
 window.BD_IMAGERY = [
-  {
-    id: "kitten",
-    name: "小猫",
-    short: "几只小猫偷偷来陪 TA 过生日。",
-    long: "温柔、可爱、陪伴感。几只精致插画小猫会从页面边缘探出，慢慢靠近祝福区域。",
-    preview: "assets/imagery/kitten/preview.webp",
-    defaultDuration: 6,
-    renderer: "kittenRenderer"
-  },
-  {
-    id: "fireworks",
-    name: "烟花",
-    short: "让整个页面为 TA 盛大绽放。",
-    long: "盛大、庆祝、今天全世界为你亮起来。使用高级粒子光晕，不使用廉价 GIF。",
-    preview: "assets/imagery/fireworks/preview.webp",
-    defaultDuration: 6,
-    renderer: "fireworksRenderer"
-  },
-  {
-    id: "flowers",
-    name: "鲜花",
-    short: "让鲜花从页面四周慢慢把 TA 包围。",
-    long: "被鲜花和偏爱包围。花材和颜色会根据当前模板自动适配。",
-    preview: "assets/imagery/flowers/preview.webp",
-    defaultDuration: 7,
-    renderer: "flowersRenderer"
-  },
-  {
-    id: "stars",
-    name: "星星",
-    short: "今晚所有星光都落向 TA。",
-    long: "闪耀、好运、被星光包围。使用细腻星点、微光、流星和星轨。",
-    preview: "assets/imagery/stars/preview.webp",
-    defaultDuration: 6,
-    renderer: "starsRenderer"
-  },
-  {
-    id: "butterflies",
-    name: "蝴蝶",
-    short: "几只蝴蝶轻轻飞过，像祝福抵达。",
-    long: "自由、浪漫、成长。少量不同大小蝴蝶缓慢经过画面。",
-    preview: "assets/imagery/butterflies/preview.webp",
-    defaultDuration: 7,
-    renderer: "butterfliesRenderer"
-  },
-  {
-    id: "balloons",
-    name: "生日气球",
-    short: "高质感气球和丝带慢慢升起。",
-    long: "最直接的生日惊喜。气球颜色会继承当前模板的主色和辅助色。",
-    preview: "assets/imagery/balloons/preview.webp",
-    defaultDuration: 6,
-    renderer: "balloonsRenderer"
-  },
-  {
-    id: "ocean",
-    name: "海浪",
-    short: "夏日海浪、光影和治愈气泡涌来。",
-    long: "夏日、自由、治愈。适合 Summer Blue、California Daydream 等清新模板。",
-    preview: "assets/imagery/ocean/preview.webp",
-    defaultDuration: 7,
-    renderer: "oceanRenderer"
-  },
-  {
-    id: "petals",
-    name: "花瓣雨",
-    short: "少量花瓣慢慢落下，温柔又纪念。",
-    long: "浪漫、温暖、纪念感。控制数量和速度，避免廉价婚庆效果。",
-    preview: "assets/imagery/petals/preview.webp",
-    defaultDuration: 6,
-    renderer: "petalsRenderer"
-  }
+  { id: "kitten", name: "\u5c0f\u732b", short: "\u51e0\u53ea\u5c0f\u732b\u5077\u5077\u6765\u966a TA \u8fc7\u751f\u65e5\u3002", preview: "assets/imagery/kitten/preview.webp", defaultDuration: 6, renderer: "kittenRenderer" },
+  { id: "fireworks", name: "\u70df\u82b1", short: "\u8ba9\u6574\u4e2a\u9875\u9762\u4e3a TA \u76db\u5927\u7efd\u653e\u3002", preview: "assets/imagery/fireworks/preview.webp", defaultDuration: 6, renderer: "fireworksRenderer" },
+  { id: "flowers", name: "\u9c9c\u82b1", short: "\u8ba9\u9c9c\u82b1\u4ece\u9875\u9762\u56db\u5468\u6162\u6162\u628a TA \u5305\u56f4\u3002", preview: "assets/imagery/flowers/preview.webp", defaultDuration: 7, renderer: "flowersRenderer" },
+  { id: "stars", name: "\u661f\u661f", short: "\u4eca\u665a\u6240\u6709\u661f\u5149\u90fd\u843d\u5411 TA\u3002", preview: "assets/imagery/stars/preview.webp", defaultDuration: 6, renderer: "starsRenderer" },
+  { id: "butterflies", name: "\u8774\u8776", short: "\u51e0\u53ea\u8774\u8776\u8f7b\u8f7b\u98de\u8fc7\uff0c\u50cf\u795d\u798f\u62b5\u8fbe\u3002", preview: "assets/imagery/butterflies/preview.webp", defaultDuration: 7, renderer: "butterfliesRenderer" },
+  { id: "balloons", name: "\u751f\u65e5\u6c14\u7403", short: "\u9ad8\u8d28\u611f\u6c14\u7403\u548c\u4e1d\u5e26\u6162\u6162\u5347\u8d77\u3002", preview: "assets/imagery/balloons/preview.webp", defaultDuration: 6, renderer: "balloonsRenderer" },
+  { id: "ocean", name: "\u6d77\u6d6a", short: "\u590f\u65e5\u6d77\u6d6a\u3001\u5149\u5f71\u548c\u6cbb\u6108\u6c14\u6ce1\u6d8c\u6765\u3002", preview: "assets/imagery/ocean/preview.webp", defaultDuration: 7, renderer: "oceanRenderer" },
+  { id: "petals", name: "\u82b1\u74e3\u96e8", short: "\u5c11\u91cf\u82b1\u74e3\u6162\u6162\u843d\u4e0b\uff0c\u6e29\u67d4\u53c8\u7eaa\u5ff5\u3002", preview: "assets/imagery/petals/preview.webp", defaultDuration: 6, renderer: "petalsRenderer" }
 ];

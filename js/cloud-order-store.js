@@ -2,94 +2,101 @@
   "use strict";
 
   function getClient() {
-    const client = window.BirthdaySupabase && window.BirthdaySupabase.getClient();
+    var client = window.BirthdaySupabase && window.BirthdaySupabase.getClient();
     if (!client) throw new Error("Supabase is not configured.");
     return client;
   }
 
-  function getError(error, fallback) {
+  function errorMessage(error, fallback) {
     return error && error.message ? error.message : fallback;
   }
 
-  function moduleConfiguration(moduleCode, modules, music, birthday) {
-    if (moduleCode === "surpriseBox") {
-      return Array.isArray(modules.surpriseBox) ? (modules.surpriseBox[0] || {}) : {};
-    }
-    if (moduleCode === "bgm") return { music: music || {} };
-    if (moduleCode === "countdown") return { birthday: birthday || null };
-    return modules[moduleCode] || {};
+  function allowedDraftStatus(status) {
+    return ["claimed", "draft", "needs_revision"].includes(status);
   }
 
+  function activeModules(snapshot) {
+    var codes = Array.isArray(snapshot.activeModules) ? snapshot.activeModules : [];
+    return Array.from(new Set(codes));
+  }
+
+  function moduleDisplayName(code) {
+    return window.BD_MODULES && window.BD_MODULES[code] && window.BD_MODULES[code].name || code;
+  }
+
+  function configurationFor(code, snapshot) {
+    var display = { displayName: moduleDisplayName(code) };
+    if (code === "bgm") return Object.assign(display, { enabled: true, track: "the_walters_i_love_you_so" });
+    if (code === "countdown") return Object.assign(display, { birthday: snapshot.recipient && snapshot.recipient.birthday || null });
+    return Object.assign(display, (snapshot.modules && snapshot.modules[code]) || {});
+  }
   async function claimOrder(orderNumber, token) {
-    const client = getClient();
-    const { data, error } = await client.functions.invoke("claim-order", {
-      body: { orderNumber, token }
-    });
-    if (error) throw new Error(getError(error, "Unable to claim this order."));
-    return data;
+    var client = getClient();
+    var result = await client.functions.invoke("claim-order", { body: { orderNumber: orderNumber, token: token } });
+    if (result.error) throw new Error(errorMessage(result.error, "\u65e0\u6cd5\u9886\u53d6\u8ba2\u5355\u3002"));
+    if (!result.data || result.data.error) throw new Error((result.data && result.data.error) || "\u65e0\u6cd5\u9886\u53d6\u8ba2\u5355\u3002");
+    return result.data;
   }
 
   async function createOrder(input) {
-    const client = getClient();
-    const { data, error } = await client.functions.invoke("create-order", { body: input });
-    if (error) throw new Error(getError(error, "Unable to create the order."));
-    return data;
+    var client = getClient();
+    var result = await client.functions.invoke("create-order", { body: input });
+    if (result.error) throw new Error(errorMessage(result.error, "\u65e0\u6cd5\u521b\u5efa\u8ba2\u5355\u3002"));
+    if (!result.data || result.data.error) throw new Error((result.data && result.data.error) || "\u65e0\u6cd5\u521b\u5efa\u8ba2\u5355\u3002");
+    return result.data;
   }
 
   async function submitOrder(orderId) {
-    const client = getClient();
-    const { data, error } = await client.functions.invoke("submit-order", { body: { orderId } });
-    if (error) throw new Error(getError(error, "Unable to submit the order."));
-    return data;
+    var client = getClient();
+    var result = await client.functions.invoke("submit-order", { body: { orderId: orderId } });
+    if (result.error) throw new Error(errorMessage(result.error, "\u65e0\u6cd5\u63d0\u4ea4\u8ba2\u5355\u3002"));
+    if (!result.data || result.data.ok === false) {
+      var notices = result.data && result.data.notices;
+      throw new Error(Array.isArray(notices) ? notices.join("\n") : ((result.data && result.data.error) || "\u65e0\u6cd5\u63d0\u4ea4\u8ba2\u5355\u3002"));
+    }
+    return result.data;
   }
 
   async function loadOrder(orderId) {
-    const client = getClient();
-    const { data: order, error: orderError } = await client
-      .from("orders")
-      .select("*")
-      .eq("id", orderId)
-      .single();
-    if (orderError) throw orderError;
-
-    const [contentResult, modulesResult, filesResult, planResult, templateResult] = await Promise.all([
+    var client = getClient();
+    var orderResult = await client.from("orders").select("*").eq("id", orderId).single();
+    if (orderResult.error) throw orderResult.error;
+    var order = orderResult.data;
+    var results = await Promise.all([
       client.from("order_content").select("*").eq("order_id", orderId).maybeSingle(),
       client.from("order_modules").select("*").eq("order_id", orderId).order("sort_order"),
       client.from("order_files").select("*").eq("order_id", orderId).eq("status", "uploaded").order("sort_order"),
-      client.from("plans").select("code, name, photo_limit").eq("id", order.plan_id).maybeSingle(),
-      client.from("templates").select("code, name, palette").eq("id", order.template_id).maybeSingle()
+      client.from("plans").select("id, code, name, price, photo_limit, description").eq("id", order.plan_id).maybeSingle(),
+      order.template_id ? client.from("templates").select("id, code, name, palette").eq("id", order.template_id).maybeSingle() : Promise.resolve({ data: null, error: null })
     ]);
-
-    if (contentResult.error) throw contentResult.error;
-    if (modulesResult.error) throw modulesResult.error;
-    if (filesResult.error) throw filesResult.error;
-    if (planResult.error) throw planResult.error;
-    if (templateResult.error) throw templateResult.error;
-
-    const files = await Promise.all((filesResult.data || []).map(async (file) => {
-      let previewUrl = "";
+    if (results.some(function (result) { return result.error; })) throw results.find(function (result) { return result.error; }).error;
+    var files = await Promise.all((results[2].data || []).map(async function (file) {
+      var previewUrl = "";
       try {
-        previewUrl = await window.BirthdayStorage.getPrivateFileUrl(file.storage_path, 600);
+        previewUrl = await window.BirthdayStorage.getPrivateFileUrl(file.storage_path, 600, file.storage_bucket);
       } catch (error) {
-        console.warn("Could not create a signed preview URL.", error);
+        console.warn("Could not create a private preview URL.", error);
       }
-      return { ...file, previewUrl };
+      return Object.assign({}, file, { previewUrl: previewUrl });
     }));
+    return { order: order, content: results[0].data || null, modules: results[1].data || [], files: files, plan: results[3].data || null, template: results[4].data || null };
+  }
 
-    return {
-      order,
-      content: contentResult.data || null,
-      modules: modulesResult.data || [],
-      files,
-      plan: planResult.data || null,
-      template: templateResult.data || null
-    };
+  async function templateIdFor(code) {
+    if (!code) return null;
+    var client = getClient();
+    var result = await client.from("templates").select("id").eq("code", code).maybeSingle();
+    if (result.error) throw result.error;
+    return result.data ? result.data.id : null;
   }
 
   async function saveDraft(orderId, snapshot) {
-    const client = getClient();
-    const now = new Date().toISOString();
-    const orderPayload = {
+    var client = getClient();
+    var now = new Date().toISOString();
+    var templateId = await templateIdFor(snapshot.templateId);
+    var nextStatus = allowedDraftStatus(snapshot.orderStatus) ? "draft" : snapshot.orderStatus;
+    var orderPayload = {
+      template_id: templateId,
       recipient_name: snapshot.recipient.recipientName || null,
       recipient_birthday: snapshot.recipient.birthday || null,
       show_age: Boolean(snapshot.recipient.showAge),
@@ -98,149 +105,173 @@
       sender_anonymous: Boolean(snapshot.sender.senderAnonymous),
       contact_method: snapshot.order.contactMethod || null,
       contact_value: snapshot.order.contactValue || null,
-      purchase_channel: snapshot.order.orderChannel || "manual",
-      external_order_number: snapshot.order.orderNo || null,
       privacy_consent_at: snapshot.privacy.privacyConfirmed ? now : null,
-      status: "draft"
+      status: nextStatus
     };
-    const { error: orderError } = await client.from("orders").update(orderPayload).eq("id", orderId);
-    if (orderError) throw orderError;
+    var orderResult = await client.from("orders").update(orderPayload).eq("id", orderId);
+    if (orderResult.error) throw orderResult.error;
 
-    const contentPayload = {
+    var contentPayload = {
       order_id: orderId,
       headline: snapshot.content.headline || null,
       main_message: snapshot.content.headline || null,
       long_message: snapshot.content.longMessage || null,
       signature: snapshot.content.signature || null,
-      music: snapshot.music || {},
-      access_mode: snapshot.privacy.pageVisibility || "unlisted",
-      allow_share: Boolean(snapshot.privacy.allowShare),
-      allow_indexing: Boolean(snapshot.privacy.allowIndexing),
+      music: { fixedTrack: "the_walters_i_love_you_so", enabled: activeModules(snapshot).includes("bgm") },
+      access_mode: "unlisted",
+      allow_share: true,
+      allow_indexing: false,
       custom_data: {
-        aiFacts: snapshot.content.aiFacts || "",
-        aiTone: snapshot.content.aiTone || "warm",
-        relationshipOther: snapshot.recipient.relationshipOther || ""
+        relationshipOther: snapshot.recipient.relationshipOther || "",
+        blessingMode: snapshot.content.blessingMode || "write",
+        inspirationFacts: snapshot.content.inspirationFacts || "",
+        inspirationTone: snapshot.content.inspirationTone || "warm",
+        polishSource: snapshot.content.polishSource || ""
       }
     };
-    const { error: contentError } = await client
-      .from("order_content")
-      .upsert(contentPayload, { onConflict: "order_id" });
-    if (contentError) throw contentError;
+    var contentResult = await client.from("order_content").upsert(contentPayload, { onConflict: "order_id" });
+    if (contentResult.error) throw contentResult.error;
 
-    const activeModules = snapshot.selectedModules || [];
-    const candidateCodes = Array.from(new Set([
-      ...activeModules,
-      ...Object.keys(snapshot.modules || {}),
-      "gallery",
-      "bgm",
-      "countdown"
-    ]));
-    const rows = candidateCodes.map((moduleCode, index) => ({
-      order_id: orderId,
-      module_code: moduleCode,
-      enabled: activeModules.includes(moduleCode),
-      configuration: moduleConfiguration(
-        moduleCode,
-        snapshot.modules || {},
-        snapshot.music || {},
-        snapshot.recipient && snapshot.recipient.birthday
-      ),
-      sort_order: index + 1
-    }));
-    if (rows.length) {
-      const { error: modulesError } = await client
-        .from("order_modules")
-        .upsert(rows, { onConflict: "order_id,module_code" });
-      if (modulesError) throw modulesError;
+    var fixed = ["gallery", "messageWall", "countdown"];
+    var allCodes = Array.from(new Set(fixed.concat(activeModules(snapshot), Object.keys(snapshot.modules || {}))));
+    var moduleRows = allCodes.map(function (code, index) {
+      return {
+        order_id: orderId,
+        module_code: code,
+        enabled: fixed.includes(code) || activeModules(snapshot).includes(code),
+        configuration: configurationFor(code, snapshot),
+        sort_order: index + 1
+      };
+    });
+    if (moduleRows.length) {
+      var modulesResult = await client.from("order_modules").upsert(moduleRows, { onConflict: "order_id,module_code" });
+      if (modulesResult.error) throw modulesResult.error;
     }
     return { savedAt: now };
   }
 
   async function uploadFile(orderId, fileType, file, metadata) {
-    const client = getClient();
-    const { data: userData, error: userError } = await client.auth.getUser();
-    if (userError || !userData.user) throw new Error("Your sign-in session is no longer valid.");
-    const kind = fileType === "cover" ? "cover" : "gallery";
+    var client = getClient();
+    var userResult = await client.auth.getUser();
+    if (userResult.error || !userResult.data.user) throw new Error("\u767b\u5f55\u72b6\u6001\u5df2\u5931\u6548\uff0c\u8bf7\u5237\u65b0\u540e\u91cd\u8bd5\u3002");
+    var user = userResult.data.user;
+    var category = fileType === "cover" ? "cover" : "gallery";
     window.BirthdayStorage.validateFile(file, fileType === "cover" ? "cover" : "image");
-    const bucket = window.BD_SUPABASE_CONFIG.privateBucket || "birthday-order-private";
-    const storagePath = window.BirthdayStorage.makeStoragePath(orderId, userData.user.id, kind, file);
-    const { error: uploadError } = await client.storage
-      .from(bucket)
-      .upload(storagePath, file, { cacheControl: "3600", contentType: file.type, upsert: false });
-    if (uploadError) throw uploadError;
-
-    const { data: record, error: recordError } = await client
-      .from("order_files")
-      .insert({
-        order_id: orderId,
-        uploaded_by: userData.user.id,
-        file_type: fileType,
-        storage_bucket: bucket,
-        storage_path: storagePath,
-        original_filename: file.name,
-        mime_type: file.type,
-        size_bytes: file.size,
-        width: metadata.width || null,
-        height: metadata.height || null,
-        sort_order: metadata.sortOrder || 0,
-        status: "uploaded"
-      })
-      .select("*")
-      .single();
-    if (recordError) {
+    var bucket = window.BD_SUPABASE_CONFIG.privateBucket || "birthday-order-private";
+    var storagePath = window.BirthdayStorage.makeStoragePath(orderId, user.id, category, file);
+    var upload = await client.storage.from(bucket).upload(storagePath, file, { cacheControl: "3600", contentType: file.type, upsert: false });
+    if (upload.error) throw upload.error;
+    var recordPayload = {
+      order_id: orderId,
+      uploaded_by: user.id,
+      file_type: fileType,
+      storage_bucket: bucket,
+      storage_path: storagePath,
+      original_filename: metadata.originalName || file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+      width: metadata.width || null,
+      height: metadata.height || null,
+      sort_order: Number(metadata.sortOrder) || 0,
+      is_featured: Boolean(metadata.isFeatured),
+      featured_sort_order: metadata.featuredSortOrder || null,
+      focal_x: Number.isFinite(metadata.focalX) ? metadata.focalX : null,
+      focal_y: Number.isFinite(metadata.focalY) ? metadata.focalY : null,
+      crop_data: metadata.cropData || {},
+      status: "uploaded"
+    };
+    var record = await client.from("order_files").insert(recordPayload).select("*").single();
+    if (record.error) {
       await client.storage.from(bucket).remove([storagePath]);
-      throw recordError;
+      throw record.error;
     }
-    return record;
+    return record.data;
+  }
+
+  async function updateFileMetadata(recordId, metadata) {
+    var client = getClient();
+    var result = await client.from("order_files").update({
+      sort_order: metadata.sortOrder,
+      is_featured: Boolean(metadata.isFeatured),
+      featured_sort_order: metadata.featuredSortOrder || null,
+      focal_x: Number.isFinite(metadata.focalX) ? metadata.focalX : null,
+      focal_y: Number.isFinite(metadata.focalY) ? metadata.focalY : null,
+      crop_data: metadata.cropData || {}
+    }).eq("id", recordId).select("*").single();
+    if (result.error) throw result.error;
+    return result.data;
   }
 
   async function deleteFile(fileRecord) {
-    const client = getClient();
     if (!fileRecord || !fileRecord.id) return;
-    const bucket = fileRecord.storage_bucket || window.BD_SUPABASE_CONFIG.privateBucket || "birthday-order-private";
-    const { error: storageError } = await client.storage.from(bucket).remove([fileRecord.storage_path]);
-    if (storageError) throw storageError;
-    const { error: recordError } = await client.from("order_files").delete().eq("id", fileRecord.id);
-    if (recordError) throw recordError;
+    var client = getClient();
+    var bucket = fileRecord.storage_bucket || window.BD_SUPABASE_CONFIG.privateBucket || "birthday-order-private";
+    var removeResult = await client.storage.from(bucket).remove([fileRecord.storage_path]);
+    if (removeResult.error) throw removeResult.error;
+    var recordResult = await client.from("order_files").delete().eq("id", fileRecord.id);
+    if (recordResult.error) throw recordResult.error;
   }
 
   async function listAdminOrders() {
-    const client = getClient();
-    const { data, error } = await client
-      .from("orders")
-      .select("id, order_number, recipient_name, recipient_birthday, sender_name, contact_method, contact_value, purchase_channel, status, created_at, submitted_at, published_at, published_url, public_slug, plans(code, name), templates(code, name)")
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return data || [];
+    var client = getClient();
+    var result = await client.from("orders").select("id, order_number, recipient_name, recipient_birthday, sender_name, contact_method, contact_value, purchase_channel, external_order_number, status, created_at, submitted_at, published_at, published_url, public_slug, plans(code, name, price, photo_limit), templates(code, name)").order("created_at", { ascending: false });
+    if (result.error) throw result.error;
+    return result.data || [];
+  }
+
+  async function listBlessingWallMessages(orderId) {
+    var client = getClient();
+    var result = await client.from("blessing_wall_messages")
+      .select("id, nickname, message, emoji, status, created_at")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: false })
+      .limit(80);
+    if (result.error) throw result.error;
+    return result.data || [];
+  }
+
+  async function moderateBlessingWallMessage(messageId, status) {
+    var client = getClient();
+    var userResult = await client.auth.getUser();
+    if (userResult.error || !userResult.data.user) throw new Error("登录状态已失效，请重新登录。");
+    var result = await client.from("blessing_wall_messages").update({
+      status: status,
+      deleted_at: status === "deleted" ? new Date().toISOString() : null,
+      deleted_by: status === "deleted" ? userResult.data.user.id : null
+    }).eq("id", messageId).select("id, status").single();
+    if (result.error) throw result.error;
+    return result.data;
+  }
+  async function updateOrderStatus(orderId, status) {
+    var client = getClient();
+    var payload = { status: status };
+    if (status === "approved") payload.approved_at = new Date().toISOString();
+    var result = await client.from("orders").update(payload).eq("id", orderId).select("*").single();
+    if (result.error) throw result.error;
+    return result.data;
   }
 
   async function publishOrder(orderId) {
-    const client = getClient();
-    const { data, error } = await client.functions.invoke("publish-order", { body: { orderId } });
-    if (error) throw new Error(getError(error, "Unable to publish the birthday page."));
-    if (!data || !data.publishedUrl) throw new Error((data && data.error) || "The birthday page was not published.");
-    return data;
-  }
-
-  async function updateOrderStatus(orderId, status) {
-    const client = getClient();
-    const changes = { status };
-    if (status === "approved") changes.approved_at = new Date().toISOString();
-    const { data, error } = await client.from("orders").update(changes).eq("id", orderId).select("*").single();
-    if (error) throw error;
-    return data;
+    var client = getClient();
+    var result = await client.functions.invoke("publish-order", { body: { orderId: orderId } });
+    if (result.error) throw new Error(errorMessage(result.error, "\u65e0\u6cd5\u53d1\u5e03\u751f\u65e5\u9875\u3002"));
+    if (!result.data || result.data.error) throw new Error((result.data && result.data.error) || "\u65e0\u6cd5\u53d1\u5e03\u751f\u65e5\u9875\u3002");
+    return result.data;
   }
 
   window.BirthdayCloudOrders = {
-    claimOrder,
-    createOrder,
-    submitOrder,
-    loadOrder,
-    saveDraft,
-    uploadFile,
-    deleteFile,
-    listAdminOrders,
-    publishOrder,
-    updateOrderStatus
+    claimOrder: claimOrder,
+    createOrder: createOrder,
+    submitOrder: submitOrder,
+    loadOrder: loadOrder,
+    saveDraft: saveDraft,
+    uploadFile: uploadFile,
+    updateFileMetadata: updateFileMetadata,
+    deleteFile: deleteFile,
+    listAdminOrders: listAdminOrders,
+    updateOrderStatus: updateOrderStatus,
+    listBlessingWallMessages: listBlessingWallMessages,
+    moderateBlessingWallMessage: moderateBlessingWallMessage,
+    publishOrder: publishOrder
   };
 })();

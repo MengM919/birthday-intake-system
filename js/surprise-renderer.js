@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   "use strict";
 
   const active = new Set();
@@ -46,6 +46,9 @@
     buildDecorations(layer, imageryCode, palette, reducedMotion);
     if (!reducedMotion) {
       rafId = startCanvas(canvas, imageryCode, palette);
+      cleanupCallbacks.push(() => {
+        if (canvas._surpriseCleanup) canvas._surpriseCleanup();
+      });
     }
 
     const pauseOnHidden = () => overlay.classList.toggle("is-paused", document.hidden);
