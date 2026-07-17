@@ -824,3 +824,5 @@ body.surprise-open { overflow: hidden; }
   .module-card { min-height: 136px; }
   .step-head { margin-bottom: 22px; }
 }
+.fixed-music-input { display: none !important; }
+.template-card img { content-visibility: auto; }

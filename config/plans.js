@@ -19,7 +19,7 @@ window.BD_PLANS = [
     galleryLimit: -1,
     includedModules: ["gallery", "messageWall", "countdown"],
     optionalModulePool: ["wishBottle", "futureMailbox", "dailyLuck", "surpriseBox", "bgm"],
-    optionalPickCount: 5,
+    optionalPickCount: 0,
     optionalPickMin: 0,
     allowMultiContributor: true,
     priorityProduction: true,

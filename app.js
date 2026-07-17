@@ -617,7 +617,7 @@
     ["bgmMode", "musicId", "songName", "artist", "uploadedAudioName"].forEach((name) => {
       const input = $("[name=\"" + name + "\"]");
       const field = input && input.closest(".field");
-      if (field) field.classList.add("hidden");
+      if (field) field.classList.add("fixed-music-input");
     });
   }
 
@@ -789,17 +789,14 @@
   function toggleModule(id) {
     const plan = currentPlan();
     if ((plan.includedModules || []).includes(id)) {
-      showToast("这个模块已包含在当前套餐中");
+      showToast("\u8fd9\u4e2a\u529f\u80fd\u5df2\u5305\u542b\u5728\u5f53\u524d\u5957\u9910\u4e2d\u3002");
       return;
     }
     if (!(plan.optionalModulePool || []).includes(id)) return;
-    const has = state.selectedOptionalModules.includes(id);
-    if (has) {
+    if (state.selectedOptionalModules.includes(id)) {
       state.selectedOptionalModules = state.selectedOptionalModules.filter((item) => item !== id);
-    } else if (state.selectedOptionalModules.length < plan.optionalPickCount) {
-      state.selectedOptionalModules.push(id);
     } else {
-      showToast(`当前套餐只能选择 ${plan.optionalPickCount} 个加购模块`);
+      state.selectedOptionalModules.push(id);
     }
     renderModules();
     renderProgress();
@@ -1630,7 +1627,7 @@
   function openTemplatePreview(templateId) {
     const template = templates.find((item) => item.id === templateId);
     if (!template) return;
-    $("#templatePreviewImage").src = template.previewImage;
+    $("#templatePreviewImage").src = template.fullPreviewImage || template.previewImage;
     $("#templatePreviewCaption").textContent = `${template.id} ${template.name} · ${template.description}`;
     const dialog = $("#templatePreviewDialog");
     if (dialog.showModal) dialog.showModal();
