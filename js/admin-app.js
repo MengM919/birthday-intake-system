@@ -309,13 +309,21 @@
   async function publishSelected() {
     if (!selectedOrderId || !window.confirm("\u786e\u5b9a\u5df2\u68c0\u67e5\u8fd9\u4efd\u8ba2\u5355\u5417\uff1f\u53d1\u5e03\u540e\u4f1a\u751f\u6210\u4e13\u5c5e\u751f\u65e5\u9875\u94fe\u63a5\u3002")) return;
     try {
-      setDetailResult("\u6b63\u5728\u751f\u6210\u4e13\u5c5e\u751f\u65e5\u9875\u2026");
+      var status = selectedRecord && selectedRecord.order && selectedRecord.order.status;
+      if (status === "published") {
+        setDetailResult("\u8fd9\u4efd\u8ba2\u5355\u5df2\u7ecf\u53d1\u5e03\uff0c\u5237\u65b0\u540e\u53ef\u590d\u5236\u751f\u65e5\u9875\u94fe\u63a5\u3002");
+        return;
+      }
+      if (status !== "approved") {
+        setDetailResult("\u6b63\u5728\u901a\u8fc7\u5ba1\u6838\u2026");
+        await window.BirthdayCloudOrders.updateOrderStatus(selectedOrderId, "approved");
+      }
+      setDetailResult("\u5ba1\u6838\u5df2\u901a\u8fc7\uff0c\u6b63\u5728\u751f\u6210\u4e13\u5c5e\u751f\u65e5\u9875\u2026");
       var result = await window.BirthdayCloudOrders.publishOrder(selectedOrderId);
       setDetailResult("\u5df2\u53d1\u5e03\uff1a" + (result.publishedUrl || result.published_url || "\u8bf7\u5237\u65b0\u8ba2\u5355\u67e5\u770b"));
       await loadOrders(); await selectOrder(selectedOrderId, true);
     } catch (error) { setDetailResult("\u53d1\u5e03\u5931\u8d25\uff1a" + (error.message || "\u8bf7\u68c0\u67e5\u51fd\u6570\u90e8\u7f72\u548c\u5546\u5bb6\u6743\u9650\u3002")); }
   }
-
   function copyPublishedUrl(value) { void navigator.clipboard.writeText(value).then(function () { setDetailResult("\u751f\u65e5\u9875\u94fe\u63a5\u5df2\u590d\u5236\u3002"); }).catch(function () { window.prompt("\u8bf7\u590d\u5236\u8fd9\u4e2a\u94fe\u63a5", value); }); }
   function setDetailResult(message) { var target = $("#detailResult"); if (target) target.textContent = message; }
   function formatDate(value) { if (!value) return "\u2014"; var date = new Date(value); return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString("zh-CN", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" }); }

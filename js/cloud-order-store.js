@@ -11,6 +11,24 @@
     return error && error.message ? error.message : fallback;
   }
 
+  async function functionErrorMessage(error, fallback) {
+    var response = error && error.context;
+    if (response && typeof response.clone === "function") {
+      try {
+        var data = await response.clone().json();
+        if (data && data.error) return String(data.error);
+        if (data && data.message) return String(data.message);
+      } catch (ignore) {
+        try {
+          var text = await response.clone().text();
+          if (text) return text;
+        } catch (secondIgnore) {
+          // Keep the Supabase error message as a safe fallback.
+        }
+      }
+    }
+    return errorMessage(error, fallback);
+  }
   function allowedDraftStatus(status) {
     return ["claimed", "draft", "needs_revision"].includes(status);
   }
@@ -254,7 +272,7 @@
   async function publishOrder(orderId) {
     var client = getClient();
     var result = await client.functions.invoke("publish-order", { body: { orderId: orderId } });
-    if (result.error) throw new Error(errorMessage(result.error, "\u65e0\u6cd5\u53d1\u5e03\u751f\u65e5\u9875\u3002"));
+    if (result.error) throw new Error(await functionErrorMessage(result.error, "\u65e0\u6cd5\u53d1\u5e03\u751f\u65e5\u9875\u3002"));
     if (!result.data || result.data.error) throw new Error((result.data && result.data.error) || "\u65e0\u6cd5\u53d1\u5e03\u751f\u65e5\u9875\u3002");
     return result.data;
   }
