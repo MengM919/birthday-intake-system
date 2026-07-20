@@ -125,7 +125,7 @@ Deno.serve(async (request) => {
 
     return json({ ok: true, publishedUrl, publicSlug: slug, birthdayPageConfig, generatedPageId: generatedPage.id });
   } catch (error) {
-    console.error("publish-order failed", error);
+    console.error("publish-order failed", { message: message(error) });
     return json({ ok: false, error: message(error) }, 400);
   }
 });
@@ -197,7 +197,11 @@ function buildTemplateSnapshot(template: Record<string, unknown>, version: Recor
     defaultSceneAssets: asObject(base.defaultSceneAssets || template.default_scene_assets),
     previewCoverImage: String(base.previewCoverImage || template.preview_cover_image || ""),
     previewThumbImage: String(base.previewThumbImage || template.preview_thumb_image || ""),
-    isPremiumTemplate: Boolean(base.isPremiumTemplate ?? template.is_premium_template)
+    isPremiumTemplate: Boolean(base.isPremiumTemplate ?? template.is_premium_template),
+    layout: asObject(base.layout),
+    visual: asObject(base.visual),
+    copy: asObject(base.copy),
+    moduleVariants: asObject(base.moduleVariants)
   };
 }
 
@@ -211,8 +215,9 @@ function buildBirthdayPageConfig(input: {
   publishedUrl: string;
 }) {
   const headline = clampHeadline(String(input.content?.headline || input.content?.main_message || ""));
+  const custom = asObject(input.content?.custom_data);
   return {
-    schemaVersion: "2026-07-template-library-v1",
+    schemaVersion: "2026-07-renderer-v2",
     generatedAt: new Date().toISOString(),
     slug: input.slug,
     publishedUrl: input.publishedUrl,
@@ -233,6 +238,14 @@ function buildBirthdayPageConfig(input: {
       headline,
       message: String(input.content?.long_message || input.content?.main_message || ""),
       signature: String(input.content?.signature || ""),
+      heroTitleLine1: String(custom.heroTitleLine1 || custom.hero_title_line_1 || ""),
+      heroTitleLine2: String(custom.heroTitleLine2 || custom.hero_title_line_2 || ""),
+      heroSubtitle: String(custom.heroSubtitle || custom.hero_subtitle || ""),
+      senderSignature: String(custom.senderSignature || custom.sender_signature || ""),
+      openCta: String(custom.openCta || custom.open_cta || ""),
+      shareTitle: String(custom.shareTitle || custom.share_title || ""),
+      shareDescription: String(custom.shareDescription || custom.share_description || ""),
+      shareCoverUrl: String(custom.shareCoverUrl || custom.share_cover_url || ""),
       music: asObject(input.content?.music)
     },
     photos: {

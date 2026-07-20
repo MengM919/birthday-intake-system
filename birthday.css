@@ -276,3 +276,259 @@ button:focus-visible,input:focus-visible,textarea:focus-visible { outline:3px so
   html { scroll-behavior:auto; }
   *,*::before,*::after { animation-duration:1ms !important; animation-iteration-count:1 !important; transition-duration:1ms !important; }
 }
+
+/* Birthday page renderer v2 */
+.birthday-shell.renderer-v2 {
+  isolation:isolate;
+  width:min(100%,1180px);
+  padding:clamp(12px,2.6vw,32px) clamp(12px,3.4vw,48px) 72px;
+}
+.renderer-v2 .birthday-hero {
+  display:grid;
+  align-items:center;
+  min-height:min(790px,calc(100svh - 28px));
+  padding:clamp(26px,6vw,78px);
+  border:1px solid color-mix(in srgb,var(--birthday-primary) 28%,white);
+  background:color-mix(in srgb,var(--birthday-soft) 78%,white);
+}
+.renderer-v2 .hero-copy { max-width:620px; }
+.renderer-v2 .hero-eyebrow {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:15px;
+  padding:7px 10px;
+  border:1px solid color-mix(in srgb,var(--birthday-primary) 36%,white);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--birthday-bg) 88%,transparent);
+  box-shadow:2px 3px 0 color-mix(in srgb,var(--birthday-accent) 16%,transparent);
+  letter-spacing:1.7px;
+}
+.renderer-v2 .hero-eyebrow::before { content:"✦"; color:var(--birthday-highlight); font-size:14px; }
+.renderer-v2 .hero-headline {
+  display:block;
+  max-width:11ch;
+  margin:0;
+  font-size:clamp(43px,8.6vw,94px);
+  font-weight:900;
+  letter-spacing:.015em;
+  line-height:1.04;
+  text-wrap:balance;
+  overflow-wrap:anywhere;
+}
+.renderer-v2 .hero-headline span { display:block; margin:0; }
+.renderer-v2 .hero-headline span + span { margin-top:.06em; }
+.renderer-v2 .hero-message {
+  max-width:33em;
+  margin:19px 0 0;
+  font-size:clamp(15px,1.8vw,19px);
+  line-height:1.92;
+  text-wrap:pretty;
+}
+.renderer-v2 .hero-signature {
+  display:inline-block;
+  margin-top:18px;
+  padding-bottom:4px;
+  border-bottom:1px solid color-mix(in srgb,var(--birthday-primary) 53%,transparent);
+  transform:rotate(-1.5deg);
+}
+.renderer-v2 .hero-photo {
+  width:min(100%,460px);
+  min-height:0;
+  aspect-ratio:4/5;
+  justify-self:center;
+  padding:10px;
+  background:#fff;
+  box-shadow:0 26px 58px color-mix(in srgb,var(--birthday-ink) 24%,transparent);
+}
+.renderer-v2 .hero-photo img {
+  width:100%;
+  min-height:0;
+  height:100%;
+  aspect-ratio:4/5;
+  object-position:var(--focal-x,50%) var(--focal-y,50%);
+}
+.renderer-v2 .hero-photo::after { width:28%; height:7%; top:-3%; left:11%; }
+.renderer-v2 .portrait-aura { width:88%; height:90%; right:-10%; bottom:-10%; }
+.renderer-v2 .countdown-compact {
+  width:min(100%,510px);
+  margin:24px 0 0;
+  padding:13px 14px 14px;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--birthday-bg) 76%,var(--birthday-soft));
+  box-shadow:none;
+}
+.renderer-v2 .countdown-title { margin:0; }
+.renderer-v2 .countdown-title span { font-size:20px; }
+.renderer-v2 .countdown-title { color:var(--birthday-ink); font-size:13px; font-weight:900; }
+.renderer-v2 .countdown-grid { gap:6px; margin-top:10px; }
+.renderer-v2 .countdown-grid > span {
+  min-width:0;
+  padding:10px 4px 8px;
+  border:1px solid color-mix(in srgb,var(--birthday-primary) 16%,white);
+  border-radius:10px;
+  background:color-mix(in srgb,var(--birthday-primary) 7%,white);
+  text-align:center;
+}
+.renderer-v2 .countdown-grid b { font-size:clamp(24px,5.8vw,39px); }
+.renderer-v2 .countdown-grid i { display:block; margin-top:4px; color:color-mix(in srgb,var(--birthday-ink) 70%,white); font-size:11px; font-style:normal; font-weight:800; }
+.renderer-v2 .hero-open-cta {
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:51px;
+  margin-top:23px;
+  padding:13px 22px;
+  border:0;
+  border-radius:999px;
+  color:#fff;
+  background:linear-gradient(115deg,var(--birthday-primary),color-mix(in srgb,var(--birthday-primary) 56%,var(--birthday-accent)));
+  box-shadow:0 15px 25px color-mix(in srgb,var(--birthday-primary) 27%,transparent);
+  font-weight:900;
+  letter-spacing:.04em;
+  transition:transform 180ms ease,box-shadow 180ms ease;
+}
+.renderer-v2 .hero-open-cta:hover,.renderer-v2 .hero-open-cta:active { transform:translateY(-3px) rotate(-.4deg); box-shadow:0 18px 30px color-mix(in srgb,var(--birthday-primary) 35%,transparent); }
+.renderer-v2 .birthday-story { position:relative; z-index:2; padding-top:25px; }
+.renderer-v2 .birthday-story[hidden] { display:none; }
+.renderer-v2 .story-intro {
+  max-width:620px;
+  margin:0 auto 20px;
+  padding:12px 20px;
+  border-left:3px solid var(--birthday-highlight);
+  color:color-mix(in srgb,var(--birthday-ink) 77%,white);
+  font-family:Georgia,"Noto Serif SC","Songti SC",serif;
+  font-size:15px;
+  line-height:1.8;
+  text-align:center;
+}
+.renderer-v2 .story-intro p { margin:0; }
+.renderer-v2 .page-sections { display:grid; gap:clamp(19px,3vw,32px); }
+.renderer-v2 .content-section {
+  padding:clamp(24px,4.5vw,52px);
+  border-radius:20px;
+  background:color-mix(in srgb,var(--birthday-soft) 68%,white);
+  box-shadow:0 18px 38px color-mix(in srgb,var(--birthday-ink) 9%,transparent);
+}
+.renderer-v2 .content-section::before { width:74px; height:19px; left:10%; background:color-mix(in srgb,var(--birthday-highlight) 59%,white); }
+.renderer-v2 .section-heading h2,.renderer-v2 .wall-heading h2 { font-size:clamp(29px,4.6vw,48px); letter-spacing:.02em; }
+.renderer-v2 .section-heading p:not(.section-kicker),.renderer-v2 .wall-heading p:not(.section-kicker) { font-size:15px; line-height:1.9; }
+.renderer-v2 .section-kicker { letter-spacing:2px; }
+.renderer-v2 .section-stamp { background:color-mix(in srgb,var(--birthday-bg) 88%,white); }
+
+/* The three initial 2.0 templates deliberately have different compositions. */
+.renderer-v2.hero-line-bloom .hero-layout-line-bloom {
+  grid-template-columns:minmax(0,1.05fr) minmax(265px,.74fr);
+  gap:clamp(30px,6vw,95px);
+  overflow:visible;
+}
+.renderer-v2.hero-line-bloom .birthday-hero {
+  border-radius:34px 12px 32px 18px;
+  background:
+    linear-gradient(90deg,transparent 95%,color-mix(in srgb,var(--birthday-accent) 18%,transparent) 95%),
+    linear-gradient(0deg,transparent 95%,color-mix(in srgb,var(--birthday-primary) 14%,transparent) 95%),
+    color-mix(in srgb,var(--birthday-bg) 90%,white);
+  background-size:22px 22px;
+}
+.renderer-v2.hero-line-bloom .hero-headline {
+  font-family:"Comic Sans MS","Kaiti SC","Microsoft YaHei",sans-serif;
+  color:var(--birthday-ink);
+  text-shadow:3px 3px 0 color-mix(in srgb,var(--birthday-accent) 28%,transparent);
+}
+.renderer-v2.hero-line-bloom .hero-headline span:nth-child(2n) { color:var(--birthday-primary); transform:rotate(-1deg); }
+.renderer-v2.hero-line-bloom .hero-photo { transform:rotate(3deg); border-radius:43% 57% 52% 48% / 49% 41% 59% 51%; }
+.renderer-v2.hero-line-bloom .hero-photo img { border-radius:inherit; }
+.renderer-v2 .hero-line-doodle { position:absolute; display:block; pointer-events:none; }
+.renderer-v2 .doodle-flower { width:48px; height:48px; right:7%; bottom:9%; border-radius:50%; background:var(--birthday-primary); box-shadow:22px 0 0 color-mix(in srgb,var(--birthday-primary) 75%,white),-22px 0 0 color-mix(in srgb,var(--birthday-primary) 75%,white),0 22px 0 color-mix(in srgb,var(--birthday-primary) 75%,white),0 -22px 0 color-mix(in srgb,var(--birthday-primary) 75%,white); transform:scale(.55) rotate(14deg); }
+.renderer-v2 .doodle-flower::after { position:absolute; width:15px; height:15px; top:17px; left:17px; content:""; border-radius:50%; background:var(--birthday-highlight); }
+.renderer-v2 .doodle-arrow { width:110px; height:45px; right:42%; bottom:8%; border-top:2px solid var(--birthday-accent); border-radius:50%; transform:rotate(14deg); }
+.renderer-v2 .doodle-arrow::after { position:absolute; top:-4px; right:-3px; width:12px; height:12px; content:""; border-top:2px solid var(--birthday-accent); border-right:2px solid var(--birthday-accent); transform:rotate(44deg); }
+
+.renderer-v2.hero-layout-collage .birthday-hero,.renderer-v2.hero-collage-poster .birthday-hero { background:var(--birthday-bg); }
+.renderer-v2 .hero-layout-collage {
+  grid-template-columns:minmax(260px,.9fr) minmax(0,1.1fr);
+  gap:clamp(24px,5vw,72px);
+  min-height:690px;
+  overflow:visible;
+}
+.renderer-v2.hero-collage-poster .birthday-hero {
+  border:0;
+  border-radius:0;
+  background:
+    linear-gradient(90deg,color-mix(in srgb,var(--birthday-primary) 10%,transparent) 1px,transparent 1px),
+    linear-gradient(0deg,color-mix(in srgb,var(--birthday-accent) 11%,transparent) 1px,transparent 1px),var(--birthday-bg);
+  background-size:18px 18px;
+  box-shadow:none;
+}
+.renderer-v2 .collage-photo-wrap { position:relative; z-index:2; width:min(100%,430px); justify-self:center; }
+.renderer-v2 .collage-photo-wrap::after { position:absolute; z-index:-1; content:""; inset:8% -9% -7% 10%; border:2px dashed var(--birthday-accent); transform:rotate(-4deg); }
+.renderer-v2 .hero-collage-poster .hero-photo { width:100%; border-radius:4px; transform:rotate(-3deg); }
+.renderer-v2 .hero-collage-poster .hero-photo img { border-radius:1px; }
+.renderer-v2 .hero-collage-poster .hero-headline { font-family:Impact,"Arial Narrow","Microsoft YaHei",sans-serif; max-width:9ch; color:var(--birthday-primary); letter-spacing:.03em; text-shadow:4px 4px 0 color-mix(in srgb,var(--birthday-highlight) 78%,white),7px 7px 0 color-mix(in srgb,var(--birthday-accent) 32%,transparent); }
+.renderer-v2 .hero-collage-poster .hero-headline span:nth-child(2n) { color:var(--birthday-accent); transform:rotate(-1deg); }
+.renderer-v2 .poster-tape { position:absolute; z-index:4; width:120px; height:29px; background:color-mix(in srgb,var(--birthday-highlight) 72%,white); opacity:.87; }
+.renderer-v2 .poster-tape-a { top:5%; left:17%; transform:rotate(-11deg); }.renderer-v2 .poster-tape-b { right:18%; bottom:8%; transform:rotate(14deg); background:color-mix(in srgb,var(--birthday-primary) 37%,white); }
+.renderer-v2 .poster-stamp { position:absolute; right:7%; top:8%; display:grid; place-items:center; width:89px; height:89px; border:3px solid var(--birthday-primary); border-radius:50%; color:var(--birthday-primary); background:color-mix(in srgb,var(--birthday-bg) 80%,transparent); font-size:12px; font-weight:900; line-height:1.2; text-align:center; transform:rotate(13deg); }
+
+.renderer-v2.hero-cinematic-portrait .birthday-hero {
+  grid-template-columns:minmax(260px,.96fr) minmax(0,1.04fr);
+  gap:clamp(22px,5vw,78px);
+  min-height:700px;
+  border-color:color-mix(in srgb,var(--birthday-primary) 40%,#1a1016);
+  border-radius:5px;
+  background:radial-gradient(circle at 74% 15%,color-mix(in srgb,var(--birthday-primary) 19%,transparent),transparent 28%),#171115;
+  box-shadow:0 28px 70px rgba(18,8,13,.45);
+}
+.renderer-v2.hero-cinematic-portrait .cinematic-visual { position:relative; width:min(100%,440px); justify-self:center; }
+.renderer-v2.hero-cinematic-portrait .hero-photo { width:100%; border:1px solid color-mix(in srgb,var(--birthday-primary) 45%,white); background:#0f0b0d; transform:rotate(-2.3deg); }
+.renderer-v2.hero-cinematic-portrait .hero-photo::after { background:color-mix(in srgb,var(--birthday-primary) 48%,transparent); }
+.renderer-v2.hero-cinematic-portrait .hero-photo img { filter:saturate(.88) contrast(1.06); }
+.renderer-v2 .cinematic-veil { position:absolute; z-index:4; inset:-8%; pointer-events:none; background:linear-gradient(125deg,transparent 20%,color-mix(in srgb,var(--birthday-primary) 22%,transparent) 42%,transparent 62%); mix-blend-mode:screen; transform:rotate(-8deg); }
+.renderer-v2.hero-cinematic-portrait .hero-eyebrow { color:var(--birthday-primary); background:rgba(255,255,255,.04); }
+.renderer-v2.hero-cinematic-portrait .hero-headline { font-family:Georgia,"Noto Serif SC","Songti SC",serif; color:#fff7fb; font-weight:700; letter-spacing:.055em; text-shadow:none; }
+.renderer-v2.hero-cinematic-portrait .hero-headline span:nth-child(2n) { color:var(--birthday-primary); }
+.renderer-v2.hero-cinematic-portrait .hero-message { color:rgba(255,246,250,.77); }
+.renderer-v2.hero-cinematic-portrait .hero-signature { color:var(--birthday-primary); }
+.renderer-v2.hero-cinematic-portrait .countdown-compact { border-color:rgba(255,255,255,.19); background:rgba(255,255,255,.06); }
+.renderer-v2.hero-cinematic-portrait .countdown-title,.renderer-v2.hero-cinematic-portrait .countdown-grid i { color:#fff6f8; }
+.renderer-v2.hero-cinematic-portrait .countdown-grid > span { border-color:rgba(255,255,255,.13); background:rgba(255,255,255,.07); }
+.renderer-v2.hero-cinematic-portrait .hero-open-cta { border-radius:4px; background:linear-gradient(105deg,#7c263e,var(--birthday-primary)); }
+
+/* Story modules: compact, tactile, and intentionally related to the active theme. */
+.renderer-v2 .album-section { overflow:visible; }
+.renderer-v2 .gallery-track { display:flex; gap:clamp(14px,2.3vw,27px); margin:28px -4px 0; padding:12px 8px 19px; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scrollbar-width:none; }
+.renderer-v2 .gallery-track::-webkit-scrollbar { display:none; }
+.renderer-v2 .polaroid { flex:0 0 min(72vw,260px); width:auto; border:0; padding:9px 9px 37px; background:#fffdf9; box-shadow:0 15px 27px rgba(45,31,34,.17); scroll-snap-align:center; transform:rotate(var(--photo-angle,0deg)); }
+.renderer-v2 .polaroid figure { margin:0; }.renderer-v2 .polaroid img { display:block; width:100%; aspect-ratio:1/1.06; object-fit:cover; background:var(--birthday-soft); }.renderer-v2 .polaroid figcaption { position:absolute; right:8px; bottom:10px; left:8px; overflow:hidden; color:#4a3a38; font-family:"Comic Sans MS","Kaiti SC",sans-serif; font-size:12px; font-weight:700; line-height:1.3; text-align:center; text-overflow:ellipsis; white-space:nowrap; }.renderer-v2 .polaroid.is-current { outline:2px solid color-mix(in srgb,var(--birthday-primary) 42%,transparent); outline-offset:4px; }
+.renderer-v2 .gallery-controls { display:flex; align-items:center; justify-content:center; gap:16px; margin-top:9px; }.renderer-v2 .gallery-controls button { border:1px solid color-mix(in srgb,var(--birthday-primary) 36%,white); border-radius:999px; padding:8px 13px; color:var(--birthday-primary); background:transparent; font-size:13px; font-weight:900; }.renderer-v2 .gallery-controls span { min-width:52px; color:color-mix(in srgb,var(--birthday-ink) 68%,white); font-size:13px; text-align:center; }
+.renderer-v2 .gallery-variant-line-grid .polaroid { border:1px solid color-mix(in srgb,var(--birthday-accent) 35%,white); box-shadow:5px 7px 0 color-mix(in srgb,var(--birthday-highlight) 54%,white); }.renderer-v2 .gallery-variant-collage-wall .polaroid { border:2px solid var(--birthday-ink); box-shadow:6px 6px 0 var(--birthday-accent); }.renderer-v2 .gallery-variant-film-strip .gallery-track { gap:0; padding:17px; background:#171115; }.renderer-v2 .gallery-variant-film-strip .polaroid { flex-basis:min(68vw,290px); border:7px solid #171115; padding:5px 5px 29px; box-shadow:none; }.renderer-v2 .gallery-variant-film-strip .polaroid figcaption { color:#fff6f8; }
+.renderer-v2 .music-section { display:flex; align-items:center; gap:18px; min-height:130px; background:linear-gradient(115deg,color-mix(in srgb,var(--birthday-primary) 15%,var(--birthday-soft)),color-mix(in srgb,var(--birthday-accent) 10%,var(--birthday-soft))); }.renderer-v2 .music-section .music-note { flex:0 0 58px; height:58px; border:2px solid var(--birthday-primary); border-radius:50%; background:conic-gradient(var(--birthday-primary),var(--birthday-accent),var(--birthday-highlight),var(--birthday-primary)); box-shadow:inset 0 0 0 18px var(--birthday-soft); }.renderer-v2 .music-section .music-toggle { margin-left:auto; border:0; border-radius:999px; padding:12px 15px; color:#fff; background:var(--birthday-primary); font-weight:900; }
+.renderer-v2 .wish-preview { margin-top:18px; }.renderer-v2 .wish-preview p { border-radius:10px; background:rgba(255,255,255,.6); }.renderer-v2 .future-letter { border-radius:3px 16px 8px 18px; }.renderer-v2 .future-letter.is-locked { filter:saturate(.7); }.renderer-v2 .gift-box-control { display:flex; align-items:center; gap:17px; width:100%; margin-top:26px; padding:15px; border:1px solid color-mix(in srgb,var(--birthday-primary) 34%,white); border-radius:16px; color:var(--birthday-ink); background:rgba(255,255,255,.52); text-align:left; }.renderer-v2 .gift-box-control:hover { transform:translateY(-2px); }.renderer-v2 .gift-box-control strong,.renderer-v2 .gift-box-control small { display:block; }.renderer-v2 .gift-box-control small { margin-top:4px; color:color-mix(in srgb,var(--birthday-ink) 63%,white); }.renderer-v2 .gift-box-illustration { position:relative; flex:0 0 58px; width:58px; height:49px; border:3px solid var(--birthday-primary); border-radius:7px; background:color-mix(in srgb,var(--birthday-highlight) 66%,white); }.renderer-v2 .gift-box-illustration i { position:absolute; left:23px; top:-3px; width:7px; height:52px; background:var(--birthday-primary); }.renderer-v2 .gift-box-illustration b,.renderer-v2 .gift-box-illustration em { position:absolute; top:-20px; width:27px; height:21px; border:3px solid var(--birthday-primary); border-radius:50% 50% 43% 43%; }.renderer-v2 .gift-box-illustration b { left:2px; transform:rotate(-25deg); }.renderer-v2 .gift-box-illustration em { right:2px; transform:rotate(25deg); }
+.renderer-v2 .share-section { text-align:center; background:linear-gradient(135deg,color-mix(in srgb,var(--birthday-primary) 12%,white),color-mix(in srgb,var(--birthday-accent) 8%,white)); }.renderer-v2 .share-section h2 { max-width:18ch; margin:0 auto; font-size:clamp(28px,4.5vw,46px); }.renderer-v2 .share-section > p:not(.section-kicker):not(.share-feedback) { max-width:38em; margin:14px auto 0; line-height:1.85; }.renderer-v2 .share-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }.renderer-v2 .share-copy-button { margin-top:18px; border:1px solid color-mix(in srgb,var(--birthday-primary) 42%,white); border-radius:999px; padding:11px 17px; color:var(--birthday-primary); background:rgba(255,255,255,.72); font-weight:900; }.renderer-v2 .share-feedback { min-height:1.5em; margin:13px 0 0; color:color-mix(in srgb,var(--birthday-ink) 67%,white); font-size:13px; }
+
+/* Modals and fullscreen gallery. */
+.gallery-lightbox { position:fixed; z-index:230; inset:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:12px; padding:18px; background:rgba(18,13,18,.91); backdrop-filter:blur(12px); }.gallery-lightbox-frame { position:relative; max-width:min(100%,920px); max-height:92svh; margin:0 auto; overflow:hidden; border:8px solid #fffdf9; background:#fffdf9; box-shadow:0 24px 70px rgba(0,0,0,.46); }.gallery-lightbox-image { display:block; max-width:100%; max-height:calc(92svh - 70px); margin:auto; object-fit:contain; transform-origin:center; transition:transform 150ms ease; }.gallery-lightbox-frame figcaption { display:flex; justify-content:space-between; gap:20px; padding:11px 4px 2px; color:#3c3030; font-family:"Comic Sans MS","Kaiti SC",sans-serif; font-size:13px; }.gallery-lightbox-close,.gallery-lightbox-arrow { border:1px solid rgba(255,255,255,.38); color:#fff; background:rgba(255,255,255,.1); backdrop-filter:blur(8px); }.gallery-lightbox-close { position:absolute; top:18px; right:18px; z-index:2; border-radius:999px; padding:8px 12px; }.gallery-lightbox-arrow { width:42px; height:42px; border-radius:50%; font-size:0; }.gallery-lightbox-arrow::after { font-size:24px; }.gallery-lightbox-prev::after { content:"‹"; }.gallery-lightbox-next::after { content:"›"; }
+.renderer-v2 .wall-heading-actions { display:flex; flex-wrap:wrap; gap:8px; }.renderer-v2 .wall-refresh-button { border:1px solid color-mix(in srgb,var(--birthday-primary) 37%,white); border-radius:999px; padding:9px 12px; color:var(--birthday-primary); background:rgba(255,255,255,.62); font-weight:800; }.renderer-v2 .public-wall-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:12px; margin-top:24px; }.renderer-v2 .public-wall-card { min-height:132px; padding:19px; border:1px solid color-mix(in srgb,var(--birthday-primary) 21%,white); border-radius:12px 20px 14px 19px; color:var(--birthday-ink); background:#fffdfb; box-shadow:4px 5px 0 color-mix(in srgb,var(--birthday-accent) 14%,transparent); }.renderer-v2 .public-wall-card:nth-child(3n+2) { transform:rotate(1.1deg); }.renderer-v2 .public-wall-card:nth-child(3n) { transform:rotate(-.8deg); }.renderer-v2 .public-wall-card p { margin:10px 0; line-height:1.7; }.renderer-v2 .public-wall-card small { color:color-mix(in srgb,var(--birthday-ink) 60%,white); }.renderer-v2 .wall-loading,.renderer-v2 .wall-empty { grid-column:1/-1; margin:0; padding:19px; border-radius:12px; background:rgba(255,255,255,.55); color:color-mix(in srgb,var(--birthday-ink) 68%,white); }
+.birthday-shell.renderer-v2.theme-T06 .content-section { border-color:rgba(238,124,162,.31); background:#24161e; box-shadow:0 18px 34px rgba(0,0,0,.28); }.birthday-shell.renderer-v2.theme-T06 .content-section,.birthday-shell.renderer-v2.theme-T06 .content-section h2,.birthday-shell.renderer-v2.theme-T06 .content-section p,.birthday-shell.renderer-v2.theme-T06 .content-section small { color:#fff6f8; }.birthday-shell.renderer-v2.theme-T06 .content-section::before { background:#6b3144; }.birthday-shell.renderer-v2.theme-T06 .public-wall-card,.birthday-shell.renderer-v2.theme-T06 .future-letter,.birthday-shell.renderer-v2.theme-T06 .wish-preview p { color:#fff6f8; background:rgba(255,255,255,.08); }.birthday-shell.renderer-v2.theme-T06 .gallery-variant-film-strip .gallery-track { background:#0d090b; }.birthday-shell.renderer-v2.theme-T06 .share-copy-button,.birthday-shell.renderer-v2.theme-T06 .wall-refresh-button { color:#fff6f8; background:rgba(255,255,255,.06); }
+
+/* All remaining templates use the shared renderer, but retain a recognizable material language. */
+.birthday-shell.renderer-v2.theme-T03 .birthday-hero,.birthday-shell.renderer-v2.theme-T08 .birthday-hero { border-radius:10px 26px 14px 30px; background:#fff7ef; }.birthday-shell.renderer-v2.theme-T03 .hero-photo,.birthday-shell.renderer-v2.theme-T08 .hero-photo { border-radius:4px; transform:rotate(-2deg); }.birthday-shell.renderer-v2.theme-T04 .birthday-hero { color:#fffdf2; background:#103d8e; }.birthday-shell.renderer-v2.theme-T04 .hero-headline,.birthday-shell.renderer-v2.theme-T04 .hero-message,.birthday-shell.renderer-v2.theme-T04 .countdown-title,.birthday-shell.renderer-v2.theme-T04 .countdown-grid i { color:#fffdf2; }.birthday-shell.renderer-v2.theme-T04 .countdown-compact { background:rgba(255,255,255,.12); }.birthday-shell.renderer-v2.theme-T04 .countdown-grid > span { background:rgba(255,255,255,.12); }.birthday-shell.renderer-v2.theme-T04 .hero-photo { border-radius:31% 39% 30% 38%; transform:rotate(1.2deg); }.birthday-shell.renderer-v2.theme-T05 .birthday-hero,.birthday-shell.renderer-v2.theme-T10 .birthday-hero { border-radius:36px; background:linear-gradient(135deg,#fffafa,#fff0f7); }.birthday-shell.renderer-v2.theme-T05 .hero-photo,.birthday-shell.renderer-v2.theme-T10 .hero-photo { border-radius:49% 51% 45% 55%; transform:rotate(0); }.birthday-shell.renderer-v2.theme-T07 .birthday-hero { border-radius:4px; background:#fff1d9; }.birthday-shell.renderer-v2.theme-T07 .hero-photo { border-radius:3px; transform:rotate(-2deg); }.birthday-shell.renderer-v2.theme-T09 .birthday-hero { border-radius:42% 42% 18px 18px / 8% 8% 18px 18px; background:linear-gradient(#eaf7ff,#f8fdff); }.birthday-shell.renderer-v2.theme-T09 .hero-photo { border-radius:50% 50% 43% 57%; transform:rotate(1deg); }.birthday-shell.renderer-v2.theme-T11 .birthday-hero,.birthday-shell.renderer-v2.theme-T11 .content-section { border:3px solid #251f20; border-radius:7px 19px 6px 15px; box-shadow:7px 7px 0 color-mix(in srgb,var(--birthday-accent) 45%,white); }.birthday-shell.renderer-v2.theme-T11 .hero-headline { font-family:Impact,"Arial Narrow","Microsoft YaHei",sans-serif; text-shadow:3px 3px 0 var(--birthday-highlight),6px 6px 0 color-mix(in srgb,var(--birthday-accent) 37%,transparent); }.birthday-shell.renderer-v2.theme-T11 .hero-photo { border:3px solid #251f20; border-radius:2px; }
+
+.screenshot-mode .hero-open-cta,.screenshot-mode .gallery-controls,.screenshot-mode .share-actions,.screenshot-mode .wall-heading-actions,.screenshot-mode .music-toggle { display:none !important; }.screenshot-mode #birthdayStory[hidden] { display:block; }.screenshot-mode .birthday-story { padding-top:18px; }.screenshot-mode .gallery-track { overflow:visible; flex-wrap:wrap; justify-content:center; }.screenshot-mode .polaroid { flex:0 1 min(42%,220px); }
+
+@media (max-width:699px) {
+  .birthday-shell.renderer-v2 { padding:10px 10px 52px; }
+  .renderer-v2 .birthday-hero { min-height:calc(100svh - 20px); padding:26px 18px 30px; border-radius:22px; }
+  .renderer-v2 .hero-headline { font-size:clamp(43px,13vw,62px); }
+  .renderer-v2 .hero-message { font-size:15px; }
+  .renderer-v2 .hero-photo { width:min(100%,355px); margin-top:7px; }
+  .renderer-v2.hero-line-bloom .hero-layout-line-bloom,.renderer-v2 .hero-layout-collage,.renderer-v2.hero-cinematic-portrait .birthday-hero { grid-template-columns:1fr; gap:25px; }
+  .renderer-v2.hero-line-bloom .hero-line-copy { order:1; }.renderer-v2.hero-line-bloom .hero-photo { order:2; transform:rotate(2deg); }.renderer-v2 .hero-layout-collage .collage-copy { order:1; }.renderer-v2 .hero-layout-collage .collage-photo-wrap { order:2; }.renderer-v2.hero-cinematic-portrait .cinematic-copy { order:1; }.renderer-v2.hero-cinematic-portrait .cinematic-visual { order:2; }
+  .renderer-v2 .hero-layout-collage { min-height:calc(100svh - 20px); }.renderer-v2.hero-cinematic-portrait .birthday-hero { min-height:calc(100svh - 20px); }.renderer-v2 .poster-stamp { right:6%; top:4%; transform:scale(.78) rotate(13deg); }.renderer-v2 .poster-tape-a { left:7%; }.renderer-v2 .hero-open-cta { width:100%; }
+  .renderer-v2 .content-section { padding:24px 18px; border-radius:17px; }.renderer-v2 .section-heading h2,.renderer-v2 .wall-heading h2 { font-size:30px; }.renderer-v2 .section-heading { gap:8px; }.renderer-v2 .module-doodle { transform:scale(.82); transform-origin:top right; }.renderer-v2 .music-section { align-items:flex-start; flex-wrap:wrap; }.renderer-v2 .music-section .music-toggle { width:100%; margin-left:0; }.renderer-v2 .gallery-track { gap:16px; }.renderer-v2 .polaroid { flex-basis:min(75vw,270px); }.renderer-v2 .wall-heading { display:block; }.renderer-v2 .wall-heading-actions { margin-top:15px; }.gallery-lightbox { grid-template-columns:1fr; justify-items:center; }.gallery-lightbox-arrow { position:absolute; bottom:22px; z-index:3; }.gallery-lightbox-prev { left:22px; }.gallery-lightbox-next { right:22px; }.gallery-lightbox-frame { width:100%; }.gallery-lightbox-image { max-height:74svh; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .renderer-v2 .hero-open-cta:hover,.renderer-v2 .gift-box-control:hover { transform:none; }
+}

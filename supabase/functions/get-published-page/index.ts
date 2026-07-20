@@ -15,7 +15,7 @@ Deno.serve(async (request) => {
     const body = await request.json().catch(() => ({}));
     const slug = String(body.slug || "");
     if (!/^[a-zA-Z0-9_-]{12,64}$/.test(slug)) {
-      throw new Error("\u8fd9\u4efd\u751f\u65e5\u60ca\u559c\u94fe\u63a5\u65e0\u6548\u3002");
+      throw new PublishedPageError("not-found", "\u8fd9\u4efd\u751f\u65e5\u60ca\u559c\u94fe\u63a5\u65e0\u6548\u3002");
     }
 
     const service = serviceClient();
@@ -23,8 +23,9 @@ Deno.serve(async (request) => {
     const page = snapshot || await loadLegacyPage(service, slug);
     return json({ ok: true, page });
   } catch (error) {
-    console.error("get-published-page failed", error);
-    return json({ ok: false, error: message(error) }, 404);
+    const code = publicErrorCode(error);
+    console.error("get-published-page failed", { code, message: message(error) });
+    return json({ ok: false, code, error: message(error) }, publicErrorStatus(error));
   }
 });
 
@@ -66,6 +67,14 @@ async function publicPageFromSnapshot(service: ReturnType<typeof createClient>, 
       headline: clampHeadline(String(content.headline || "")),
       message: String(content.message || ""),
       signature: String(content.signature || ""),
+      heroTitleLine1: String(content.heroTitleLine1 || content.hero_title_line_1 || ""),
+      heroTitleLine2: String(content.heroTitleLine2 || content.hero_title_line_2 || ""),
+      heroSubtitle: String(content.heroSubtitle || content.hero_subtitle || ""),
+      senderSignature: String(content.senderSignature || content.sender_signature || ""),
+      openCta: String(content.openCta || content.open_cta || ""),
+      shareTitle: String(content.shareTitle || content.share_title || ""),
+      shareDescription: String(content.shareDescription || content.share_description || ""),
+      shareCoverUrl: String(content.shareCoverUrl || content.share_cover_url || ""),
       music: asObject(content.music)
     },
     photos: { cover, gallery },
@@ -80,13 +89,18 @@ async function loadLegacyPage(service: ReturnType<typeof createClient>, slug: st
     .select("id, public_slug, status, recipient_name, recipient_birthday, sender_name, sender_anonymous, relationship_type, template:templates(code,name,palette)")
     .eq("public_slug", slug)
     .eq("status", "published")
-    .single();
-  if (orderError || !order) {
-    throw new Error("\u8fd9\u4efd\u751f\u65e5\u60ca\u559c\u4e0d\u5b58\u5728\u3001\u5c1a\u672a\u53d1\u5e03\u6216\u5df2\u4e0b\u7ebf\u3002");
+    .maybeSingle();
+  if (orderError) throw orderError;
+  if (!order) {
+    const status = await orderStatusForSlug(service, slug);
+    if (status && status !== "published") {
+      throw new PublishedPageError("unpublished", "\u8fd9\u4efd\u751f\u65e5\u60ca\u559c\u8fd8\u5728\u51c6\u5907\u4e2d\u3002");
+    }
+    throw new PublishedPageError("not-found", "\u6ca1\u6709\u627e\u5230\u8fd9\u4efd\u751f\u65e5\u60ca\u559c\u3002");
   }
 
   const [contentResult, moduleResult, fileResult] = await Promise.all([
-    service.from("order_content").select("headline, main_message, long_message, signature, access_mode, allow_share, music").eq("order_id", order.id).maybeSingle(),
+    service.from("order_content").select("headline, main_message, long_message, signature, access_mode, allow_share, music, custom_data").eq("order_id", order.id).maybeSingle(),
     service.from("order_modules").select("module_code, enabled, configuration, sort_order").eq("order_id", order.id).eq("enabled", true).order("sort_order"),
     service.from("order_files").select("file_type, storage_bucket, storage_path, sort_order, caption, is_featured, featured_sort_order, focal_x, focal_y, crop_data").eq("order_id", order.id).eq("status", "uploaded").in("file_type", ["cover", "gallery"]).order("sort_order")
   ]);
@@ -95,8 +109,9 @@ async function loadLegacyPage(service: ReturnType<typeof createClient>, slug: st
   if (fileResult.error) throw fileResult.error;
 
   const content = contentResult.data;
+  const custom = asObject(content?.custom_data);
   if ((content?.access_mode || "unlisted") !== "unlisted") {
-    throw new Error("\u8be5\u9875\u9762\u7684\u8bbf\u95ee\u65b9\u5f0f\u6682\u4e0d\u652f\u6301\u3002");
+    throw new PublishedPageError("render-error", "\u8be5\u9875\u9762\u7684\u8bbf\u95ee\u65b9\u5f0f\u6682\u4e0d\u652f\u6301\u3002");
   }
 
   const rawFiles = (fileResult.data || []).map((file: Record<string, unknown>) => ({
@@ -132,6 +147,14 @@ async function loadLegacyPage(service: ReturnType<typeof createClient>, slug: st
       headline: clampHeadline(String(content?.headline || content?.main_message || "")),
       message: String(content?.long_message || content?.main_message || ""),
       signature: String(content?.signature || ""),
+      heroTitleLine1: String(custom.heroTitleLine1 || custom.hero_title_line_1 || ""),
+      heroTitleLine2: String(custom.heroTitleLine2 || custom.hero_title_line_2 || ""),
+      heroSubtitle: String(custom.heroSubtitle || custom.hero_subtitle || ""),
+      senderSignature: String(custom.senderSignature || custom.sender_signature || ""),
+      openCta: String(custom.openCta || custom.open_cta || ""),
+      shareTitle: String(custom.shareTitle || custom.share_title || ""),
+      shareDescription: String(custom.shareDescription || custom.share_description || ""),
+      shareCoverUrl: String(custom.shareCoverUrl || custom.share_cover_url || ""),
       music: asObject(content?.music)
     },
     photos: {
@@ -149,7 +172,7 @@ async function signedPhoto(service: ReturnType<typeof createClient>, file: Recor
   if (!bucket || !path) return null;
   const { data, error } = await service.storage.from(bucket).createSignedUrl(path, 60 * 30);
   if (error || !data?.signedUrl) {
-    console.warn("Could not sign birthday page asset", { bucket, path, error: error?.message });
+    console.warn("Could not sign birthday page asset");
     return null;
   }
   return {
@@ -216,7 +239,11 @@ function sanitizeTemplateAsset(asset: Record<string, unknown>) {
     copyTone: String(asset.copyTone || ""),
     layoutRule: String(asset.layoutRule || ""),
     supportedModules: Array.isArray(asset.supportedModules) ? asset.supportedModules : [],
-    isPremiumTemplate: Boolean(asset.isPremiumTemplate)
+    isPremiumTemplate: Boolean(asset.isPremiumTemplate),
+    layout: asObject(asset.layout),
+    visual: asObject(asset.visual),
+    copy: asObject(asset.copy),
+    moduleVariants: asObject(asset.moduleVariants)
   };
 }
 
@@ -240,6 +267,36 @@ function asObject(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
+type PublicPageErrorCode = "not-found" | "unpublished" | "render-error" | "network-error";
+
+class PublishedPageError extends Error {
+  constructor(public code: PublicPageErrorCode, message: string) {
+    super(message);
+    this.name = "PublishedPageError";
+  }
+}
+
+async function orderStatusForSlug(service: ReturnType<typeof createClient>, slug: string) {
+  const { data, error } = await service
+    .from("orders")
+    .select("status")
+    .eq("public_slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  return String(data?.status || "");
+}
+
+function publicErrorCode(error: unknown): PublicPageErrorCode {
+  return error instanceof PublishedPageError ? error.code : "network-error";
+}
+
+function publicErrorStatus(error: unknown) {
+  if (!(error instanceof PublishedPageError)) return 503;
+  if (error.code === "not-found") return 404;
+  if (error.code === "unpublished") return 409;
+  if (error.code === "network-error") return 503;
+  return 422;
+}
 function isMissingTable(error: unknown) {
   const info = error as { code?: string; message?: string };
   return info?.code === "42P01" || info?.code === "PGRST205" || /generated_pages/i.test(String(info?.message || "")) && /schema cache|does not exist/i.test(String(info?.message || ""));

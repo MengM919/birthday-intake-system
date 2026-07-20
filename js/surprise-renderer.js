@@ -26,7 +26,10 @@
     var autoTimer = 0;
     var remaining = Math.max(4000, Math.min(10000, Number(scene.duration || 6) * 1000));
     var lastStarted = 0;
-    var closed = false;
+var closed = false;
+    var previousFocus = document.activeElement;
+    var historyToken = "birthday-surprise-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+    var historyPushed = false;
 
     overlay.className = "surprise-experience scene-" + scene.id;
     overlay.setAttribute("role", "dialog");
@@ -83,23 +86,35 @@
       }
     }
 
-    function onEscape(event) {
-      if (event.key === "Escape") close();
+function onPopState() {
+      close({ fromHistory: true });
     }
 
-    function close() {
+    function onKeydown(event) {
+      if (event.key === "Escape") { event.preventDefault(); close(); }
+      else if (event.key === "Tab") trapFocus(event, overlay);
+    }
+
+    function close(options) {
       if (closed) return;
       closed = true;
       clearTimeout(revealTimer);
       clearTimeout(autoTimer);
       document.removeEventListener("visibilitychange", pauseForHidden);
-      document.removeEventListener("keydown", onEscape);
+      document.removeEventListener("keydown", onKeydown);
+      window.removeEventListener("popstate", onPopState);
       if (canvasController) canvasController.destroy();
-      overlay.classList.remove("is-visible");
+overlay.classList.remove("is-visible");
+      if (historyPushed && !(options && options.fromHistory)) {
+        try {
+          if (window.history.state && window.history.state.birthdaySurprise === historyToken) window.history.back();
+        } catch (error) {}
+      }
       window.setTimeout(function () {
         overlay.remove();
         if (activeOverlay && activeOverlay.element === overlay) activeOverlay = null;
         if (!document.querySelector(".surprise-experience")) document.body.classList.remove("surprise-open");
+        if (previousFocus && typeof previousFocus.focus === "function") previousFocus.focus();
       }, 230);
     }
 
@@ -108,7 +123,8 @@
       if (event.target === overlay.querySelector(".surprise-backdrop")) close();
     });
     document.addEventListener("visibilitychange", pauseForHidden);
-    document.addEventListener("keydown", onEscape);
+    document.addEventListener("keydown", onKeydown);
+    if (closeButton) closeButton.focus();
 
     window.requestAnimationFrame(function () { overlay.classList.add("is-visible"); });
     revealTimer = window.setTimeout(reveal, reduced ? 70 : 310);
@@ -149,7 +165,7 @@
   }
 
   function writeCycle(key, value) {
-    try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (error) { console.warn("Blindbox cycle was not persisted.", error); }
+    try { window.localStorage.setItem(key, JSON.stringify(value)); } catch (error) { if (isDevelopment()) console.warn("Blindbox cycle was not persisted.", error && error.message || "unknown"); }
   }
 
   function shuffle(values) {
@@ -305,6 +321,14 @@
     };
   }
 
+  function trapFocus(event, dialog) {
+    var items = Array.prototype.slice.call(dialog.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function (item) { return item.offsetParent !== null; });
+    if (!items.length) { event.preventDefault(); return; }
+    var first = items[0], last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -315,4 +339,9 @@
   }
 
   window.openSurpriseExperience = openSurpriseExperience;
+  window.closeActiveSurpriseExperience = function () {
+    if (activeOverlay && typeof activeOverlay.close === "function") activeOverlay.close();
+  };
+  function isDevelopment() { return /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname); }
+
 })();

@@ -83,3 +83,19 @@ GitHub Pages 线上路径是：
 - `JUHE_ALMANAC_KEY`
 
 - [模板资产库与生日页面生成器部署说明](TEMPLATE_ASSET_LIBRARY_GUIDE.md)
+
+## Birthday page renderer 2.0
+
+The public birthday page now has one renderer entry: `birthday.html -> js/birthday-page.js`. The page always prefers the immutable `generated_pages.config_snapshot`, so later template edits do not silently redesign already published gifts.
+
+The first versioned 2.0 templates are `T01` (white line and bloom), `T02` (red-blue collage), and `T06` (pink midnight cinema). Their composition is resolved in `config/birthday-template-registry.js`; shared content and behavior stay in the renderer and its modules.
+
+To add a new template variant later:
+
+1. Add the visual asset metadata to `config/template-assets.js`.
+2. Add its composition, visual and copy manifest to `config/birthday-template-registry.js`.
+3. Add a versioned manifest migration under `supabase/migrations/`.
+4. Add only the variant CSS needed for its hero/gallery/module material in `birthday.css`.
+5. Publish a new test order and verify it on mobile before enabling it for customers.
+
+For this release's exact Supabase and GitHub Pages steps, read [BIRTHDAY_PAGE_EXPERIENCE_DEPLOYMENT.md](BIRTHDAY_PAGE_EXPERIENCE_DEPLOYMENT.md). For the browser regression checklist, read [BIRTHDAY_PAGE_RENDERER_TEST_CHECKLIST.md](BIRTHDAY_PAGE_RENDERER_TEST_CHECKLIST.md).
