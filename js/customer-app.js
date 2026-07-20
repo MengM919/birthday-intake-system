@@ -4,7 +4,6 @@
   var plans = Array.isArray(window.BD_PLANS) ? window.BD_PLANS : [];
   var templates = Array.isArray(window.BD_TEMPLATES) ? window.BD_TEMPLATES : [];
   var modules = window.BD_MODULES || {};
-  var imagery = Array.isArray(window.BD_IMAGERY) ? window.BD_IMAGERY : [];
   var fixedModules = ["gallery", "messageWall", "countdown"];
   var editableStatuses = ["claimed", "draft", "needs_revision"];
   var legacyPlans = { basic_99: "basic_166", heart_169: "basic_166", surprise_249: "upgrade_288", all_love_399: "upgrade_288" };
@@ -33,7 +32,7 @@
     modules: {
       wishBottle: { title: "\u8bb8\u4e00\u4e2a\u4f1a\u6162\u6162\u5b9e\u73b0\u7684\u613f\u671b", prompt: "\u628a\u60f3\u5bf9 TA \u8bf4\u7684\u5c0f\u613f\u671b\u653e\u8fdb\u74f6\u5b50\u91cc\u3002" },
       futureMailbox: { openDate: "", content: "" },
-      surpriseBox: { imageryCode: "", surpriseTitle: "\u7ed9\u4f60\u85cf\u4e86\u4e00\u4efd\u5c0f\u60ca\u559c", surpriseMessage: "", signature: "" },
+      surpriseBox: { displayName: "\u60ca\u559c\u76f2\u76d2", sceneMode: "random_immersive", scenePoolVersion: "v1" },
       dailyLuck: {},
       bgm: { enabled: true }
     },
@@ -45,6 +44,9 @@
   function canEditTemplate() { return canEditOrder(); }
   function draftKey() { return state.orderId ? "birthday-intake-six-draft-" + state.orderId : ""; }
   function text(value) { return String(value || "").trim(); }
+  function hasGalleryLimit(plan) { return Number(plan && plan.galleryLimit) > 0; }
+  function galleryLimitLabel(plan) { return hasGalleryLimit(plan) ? String(plan.galleryLimit) + " \u5f20" : "\u4e0d\u9650\u5f20"; }
+  function galleryCountLabel(plan, count) { return hasGalleryLimit(plan) ? count + " / " + plan.galleryLimit : count + " \u5f20\uff08\u4e0d\u9650\u5f20\uff09"; }
   function e(value) { var element = document.createElement("div"); element.textContent = String(value == null ? "" : value); return element.innerHTML; }
 
   function activeGalleryPhotos() { return state.media.gallery.filter(function (photo) { return photo.status !== "failed"; }); }
@@ -107,12 +109,6 @@
     $("#blessingCandidates").addEventListener("click", applyCandidate);
     $("#polishCandidates").addEventListener("click", applyCandidate);
     $("#moduleGrid").addEventListener("click", function (event) { var button = event.target.closest("[data-module-toggle]"); if (button) toggleModule(button.dataset.moduleToggle); });
-    $("#moduleFields").addEventListener("click", function (event) {
-      var button = event.target.closest("[data-imagery-code]");
-      if (!button) return;
-      state.modules.surpriseBox.imageryCode = button.dataset.imageryCode;
-      renderModules(); afterChange();
-    });
     window.addEventListener("popstate", function (event) { var step = event.state && event.state.step; if (step && (step === state.currentStep || state.completedSteps.has(step))) setStep(step, true); });
   }
 
@@ -253,7 +249,6 @@
     state.privacy.privacyConfirmed = checked("privacyConfirmed");
     state.modules.wishBottle.title = value("wishBottleTitle") || state.modules.wishBottle.title; state.modules.wishBottle.prompt = value("wishBottlePrompt") || state.modules.wishBottle.prompt;
     state.modules.futureMailbox.openDate = value("futureOpenDate") || ""; state.modules.futureMailbox.content = value("futureMessage") || "";
-    state.modules.surpriseBox.surpriseTitle = value("surpriseTitle") || "\u7ed9\u4f60\u85cf\u4e86\u4e00\u4efd\u5c0f\u60ca\u559c"; state.modules.surpriseBox.surpriseMessage = value("surpriseMessage") || ""; state.modules.surpriseBox.signature = value("surpriseSignature") || "";
   }
 
   function syncForm() {
@@ -299,16 +294,18 @@
   function renderOrderSummary() {
     var plan = currentPlan(); var name = state.lockedPlanName || plan.name; var price = Number.isFinite(Number(state.lockedPlanPrice)) ? state.lockedPlanPrice : plan.priceCny;
     var featureNames = fixedModules.concat(plan.optionalModulePool || []).map(function (code) { return modules[code] && modules[code].name || code; }).join("\u3001");
-    var rows = [["\u8ba2\u5355\u7f16\u53f7", state.orderNumber || "\u2014"], ["\u8d2d\u4e70\u6e20\u9053", channelName(state.order.purchaseChannel)], ["\u5df2\u8d2d\u5957\u9910", name + " \u00b7 \u00a5" + price], ["\u7167\u7247\u4e0a\u9650", plan.galleryLimit + " \u5f20\u56de\u5fc6\u7167\u7247"], ["\u672c\u5957\u9910\u5df2\u5305\u542b", featureNames]];
-    $("#lockedOrderSummary").innerHTML = rows.map(function (row, index) { return '<div' + (index === 4 ? ' class="order-module-list"' : '') + '><span>' + row[0] + '</span><strong>' + e(row[1]) + '</strong></div>'; }).join("");
+    var planHighlights = Array.isArray(plan.features) && plan.features.length ? plan.features.join("\uff1b") : (plan.summary || "");
+    var galleryDescription = hasGalleryLimit(plan) ? galleryLimitLabel(plan) + "\u56de\u5fc6\u7167\u7247" : "\u4e0d\u9650\u5f20\u56de\u5fc6\u7167\u7247\uff08\u9996\u9875\u7cbe\u9009 8 \u5f20\u5c55\u793a\uff09";
+    var rows = [["\u8ba2\u5355\u7f16\u53f7", state.orderNumber || "\u2014"], ["\u8d2d\u4e70\u6e20\u9053", channelName(state.order.purchaseChannel)], ["\u5df2\u8d2d\u5957\u9910", name + " \u00b7 \u00a5" + price], ["\u5957\u9910\u4eae\u70b9", planHighlights], ["\u56de\u5fc6\u7167\u7247", galleryDescription], ["\u5df2\u5f00\u542f\u529f\u80fd", featureNames]];
+    $("#lockedOrderSummary").innerHTML = rows.map(function (row, index) { return '<div' + (index === rows.length - 1 ? ' class="order-module-list"' : '') + '><span>' + row[0] + '</span><strong>' + e(row[1]) + '</strong></div>'; }).join("");
   }
 
   function renderTemplates() {
     var editable = canEditTemplate();
     $("#templateGrid").innerHTML = templates.map(function (template) {
       var selected = template.id === state.templateId;
-      var preview = template.previewImage + "?v=20260717-six-step-r4";
-      var fallback = (template.fullPreviewImage || template.previewImage) + "?v=20260717-six-step-r4";
+      var preview = template.previewImage + "?v=20260720-template-library-r3";
+      var fallback = (template.fullPreviewImage || template.previewImage) + "?v=20260720-template-library-r3";
       var priority = Number(template.id.slice(1)) <= 4 ? "eager" : "lazy";
       return '<article class="template-card ' + (selected ? "selected" : "") + '">' +
         '<div class="template-image-wrap"><img src="' + e(preview) + '" loading="' + priority + '" decoding="async" fetchpriority="' + (priority === "eager" ? "high" : "auto") + '" onerror="this.onerror=null;this.src=\'' + e(fallback) + '\'" alt="' + e(template.name) + '">' +
@@ -322,7 +319,10 @@
   function previewTemplate(id) { var template = templates.find(function (item) { return item.id === id; }); if (!template) return; $("#templatePreviewImage").src = template.fullPreviewImage || template.previewImage; $("#templatePreviewImage").alt = template.name; $("#templatePreviewCaption").textContent = template.id + " · " + template.name + " · " + (template.description || ""); $("#templatePreviewDialog").showModal(); }
 
   function renderUploads() {
-    var plan = currentPlan(); var activeGallery = activeGalleryPhotos(); $("#photoLimitCopy").textContent = "\u5c01\u9762\u56fe 1 \u5f20\uff1b\u5f53\u524d\u8ba2\u5355\u6700\u591a\u4e0a\u4f20 " + plan.galleryLimit + " \u5f20\u56de\u5fc6\u7167\u7247\u3002\u4f60\u53ef\u4ee5\u4ece\u4e2d\u9009\u62e9\u6700\u591a 8 \u5f20\u91cd\u70b9\u5c55\u793a\u3002"; $("#galleryCount").textContent = activeGallery.length + " / " + plan.galleryLimit;
+    var plan = currentPlan(); var activeGallery = activeGalleryPhotos();
+    var galleryCopy = hasGalleryLimit(plan) ? "\u5f53\u524d\u8ba2\u5355\u6700\u591a\u4e0a\u4f20 " + galleryLimitLabel(plan) + "\u56de\u5fc6\u7167\u7247\u3002" : "\u56de\u5fc6\u7167\u7247\u4e0d\u9650\u5f20\uff1b\u9996\u9875\u4f1a\u81ea\u52a8\u7cbe\u9009 8 \u5f20\uff0c\u5176\u4f59\u7167\u7247\u4ecd\u53ef\u5728\u76f8\u518c\u4e2d\u7ffb\u9605\u3002";
+    $("#photoLimitCopy").textContent = "\u5c01\u9762\u56fe 1 \u5f20\uff1b" + galleryCopy + "\u53ef\u4ece\u4e2d\u9009\u62e9\u6700\u591a 8 \u5f20\u91cd\u70b9\u5c55\u793a\u3002";
+    $("#galleryCount").textContent = galleryCountLabel(plan, activeGallery.length);
     var cover = state.media.cover;
     $("#coverPreview").classList.toggle("empty", !cover);
     if (!cover) $("#coverPreview").textContent = "\u8fd8\u6ca1\u6709\u653e\u5165\u5c01\u9762\u56fe";
@@ -357,10 +357,11 @@
   }
   async function addGallery(files) {
     if (!canEditOrder()) return showToast("\u8bf7\u901a\u8fc7\u5546\u5bb6\u63d0\u4f9b\u7684\u4e13\u5c5e\u94fe\u63a5\u4e0a\u4f20\u6b63\u5f0f\u7167\u7247\u3002");
-    var remaining = currentPlan().galleryLimit - activeGalleryPhotos().length;
-    if (remaining <= 0) return showToast("\u5f53\u524d\u8ba2\u5355\u6700\u591a " + currentPlan().galleryLimit + " \u5f20\u56de\u5fc6\u7167\u7247\u3002");
-    if (files.length > remaining) showToast("\u8d85\u51fa\u7684\u7167\u7247\u6ca1\u6709\u52a0\u5165\uff0c\u8fd8\u53ef\u4e0a\u4f20 " + remaining + " \u5f20\u3002");
-    for (var i = 0; i < Math.min(files.length, remaining); i += 1) await addOneGallery(files[i]);
+    var plan = currentPlan(); var remaining = hasGalleryLimit(plan) ? plan.galleryLimit - activeGalleryPhotos().length : Infinity;
+    if (remaining <= 0) return showToast("\u5f53\u524d\u8ba2\u5355\u6700\u591a " + galleryLimitLabel(plan) + "\u56de\u5fc6\u7167\u7247\u3002");
+    if (Number.isFinite(remaining) && files.length > remaining) showToast("\u8d85\u51fa\u7684\u7167\u7247\u6ca1\u6709\u52a0\u5165\uff0c\u8fd8\u53ef\u4e0a\u4f20 " + remaining + " \u5f20\u3002");
+    var uploadCount = Number.isFinite(remaining) ? Math.min(files.length, remaining) : files.length;
+    for (var i = 0; i < uploadCount; i += 1) await addOneGallery(files[i]);
   }
   async function addOneGallery(file) {
     var photo = { id: (crypto.randomUUID && crypto.randomUUID()) || String(Date.now() + Math.random()), originalName: file.name || "\u7167\u7247", sourceFile: file, previewUrl: "", status: "processing", isFeatured: false, focalX: .5, focalY: .5, cropData: {} };
@@ -454,11 +455,7 @@
   }
 
   function renderSurpriseBoxFields() {
-    return '<section class="module-config"><div class="module-config-head"><h3>惊喜盲盒</h3><p>选择打开盲盒时出现的惊喜。TA 点击后，页面会短暂进入专属沉浸场景。</p></div><div class="imagery-grid">' +
-      imagery.map(function (item) {
-        return '<button type="button" class="imagery-card ' + (state.modules.surpriseBox.imageryCode === item.id ? "selected" : "") + '" data-imagery-code="' + item.id + '"><img src="' + e(item.preview) + '" loading="lazy" alt="' + e(item.name) + '"><span>' + e(item.name) + '</span><small>' + e(item.short) + '</small></button>';
-      }).join("") +
-      '</div><label class="field">盲盒标题<input name="surpriseTitle" maxlength="40" value="' + e(state.modules.surpriseBox.surpriseTitle || "") + '"></label><label class="field">盲盒里的话<textarea name="surpriseMessage" maxlength="240">' + e(state.modules.surpriseBox.surpriseMessage || "") + '</textarea></label><label class="field">署名 <span class="field-hint">可选</span><input name="surpriseSignature" maxlength="30" value="' + e(state.modules.surpriseBox.signature || "") + '"></label></section>';
+    return '<section class="module-config surprise-system-note"><div class="module-config-head"><h3>\u60ca\u559c\u76f2\u76d2</h3><p>\u751f\u65e5\u9875\u4f1a\u51c6\u5907\u4e00\u53ea\u5c0f\u793c\u76d2\u3002TA \u70b9\u51fb\u6253\u5f00\u540e\uff0c\u4f1a\u968f\u673a\u8fce\u6765\u4e00\u4e2a\u4e0d\u91cd\u6837\u7684\u6c89\u6d78\u5f0f\u751f\u65e5\u60ca\u559c\u3002</p></div><div class="blindbox-system-preview"><span class="mini-gift" aria-hidden="true"><i></i><b></b></span><div><strong>\u4e0d\u9700\u8981\u63d0\u524d\u9009\u62e9\u60ca\u559c\u5185\u5bb9</strong><p>\u5c0f\u732b\u3001\u70df\u82b1\u3001\u82b1\u675f\u3001\u751c\u54c1\u3001\u6d77\u8fb9\u7b49 8 \u4efd\u793c\u7269\u573a\u666f\uff0c\u4f1a\u5728 TA \u6253\u5f00\u793c\u76d2\u65f6\u609f\u609f\u51fa\u73b0\u3002</p></div></div></section>';
   }
 
   function renderDailyLuckConfig() {
@@ -479,7 +476,7 @@
   }
   function renderReview() {
     var plan = currentPlan(); var modulesText = fixedModules.concat(state.activeModules).map(function (code) { return modules[code] && modules[code].name || code; }).join("\u3001");
-    var rows = [["\u8ba2\u5355", state.orderNumber || "\u7b49\u5f85\u6b63\u5f0f\u8ba2\u5355"], ["\u5957\u9910", (state.lockedPlanName || plan.name) + " \u00b7 \u00a5" + (state.lockedPlanPrice || plan.priceCny)], ["\u9875\u9762\u6a21\u677f", state.templateId || "\u8fd8\u672a\u9009\u62e9"], ["\u5bff\u661f", state.recipient.recipientName || "\u8fd8\u672a\u586b\u5199"], ["\u751f\u65e5", state.recipient.birthday || "\u8fd8\u672a\u586b\u5199"], ["\u7167\u7247", (state.media.cover && state.media.cover.status === "complete" ? "\u5c01\u9762\u5df2\u4e0a\u4f20" : "\u8fd8\u672a\u4e0a\u4f20\u5c01\u9762") + "\uff1b\u76f8\u518c " + completeGalleryPhotos().length + " / " + plan.galleryLimit], ["\u5df2\u5f00\u542f\u529f\u80fd", modulesText], ["\u8bbf\u95ee\u65b9\u5f0f", "\u4ec5\u901a\u8fc7\u4e13\u5c5e\u94fe\u63a5\u8bbf\u95ee\uff0c\u4e0d\u516c\u5f00\u641c\u7d22\u7d22\u5f15"]];
+    var rows = [["\u8ba2\u5355", state.orderNumber || "\u7b49\u5f85\u6b63\u5f0f\u8ba2\u5355"], ["\u5957\u9910", (state.lockedPlanName || plan.name) + " \u00b7 \u00a5" + (state.lockedPlanPrice || plan.priceCny)], ["\u9875\u9762\u6a21\u677f", state.templateId || "\u8fd8\u672a\u9009\u62e9"], ["\u5bff\u661f", state.recipient.recipientName || "\u8fd8\u672a\u586b\u5199"], ["\u751f\u65e5", state.recipient.birthday || "\u8fd8\u672a\u586b\u5199"], ["\u7167\u7247", (state.media.cover && state.media.cover.status === "complete" ? "\u5c01\u9762\u5df2\u4e0a\u4f20" : "\u8fd8\u672a\u4e0a\u4f20\u5c01\u9762") + "\uff1b\u76f8\u518c " + galleryCountLabel(plan, completeGalleryPhotos().length)], ["\u5df2\u5f00\u542f\u529f\u80fd", modulesText], ["\u8bbf\u95ee\u65b9\u5f0f", "\u4ec5\u901a\u8fc7\u4e13\u5c5e\u94fe\u63a5\u8bbf\u95ee\uff0c\u4e0d\u516c\u5f00\u641c\u7d22\u7d22\u5f15"]];
     $("#reviewSummary").innerHTML = rows.map(function (row) { return '<article class="review-item"><span>' + row[0] + '</span><strong>' + e(row[1]) + '</strong></article>'; }).join("");
     var notices = []; if (!canEditOrder()) notices.push("\u8bf7\u4f7f\u7528\u5546\u5bb6\u53d1\u9001\u7684\u4e13\u5c5e\u8ba2\u5355\u94fe\u63a5\uff0c\u624d\u80fd\u5b89\u5168\u63d0\u4ea4\u8d44\u6599\u3002"); if (!state.media.cover || state.media.cover.status !== "complete") notices.push("\u8fd8\u9700\u8981\u4e00\u5f20\u5c01\u9762\u56fe\u3002"); if (!completeGalleryPhotos().length) notices.push("\u8fd8\u9700\u8981\u81f3\u5c11\u4e00\u5f20\u56de\u5fc6\u7167\u7247\u3002"); if (!state.privacy.privacyConfirmed) notices.push("\u63d0\u4ea4\u524d\u8bf7\u8ba4\u771f\u9605\u8bfb\u5e76\u4e3b\u52a8\u786e\u8ba4\u6388\u6743\u8bf4\u660e\u3002");
     $("#reviewNotices").innerHTML = notices.map(function (notice) { return '<div class="notice">' + e(notice) + '</div>'; }).join("");
@@ -494,9 +491,9 @@
     clearErrors(); syncFromForm(); var plan = currentPlan(); var first = ""; var add = function (key, message) { if (!first) first = key; setError(key, message); };
     if (step === 1) { if (!canEditOrder()) add("contactValue", "\u8bf7\u901a\u8fc7\u5546\u5bb6\u53d1\u9001\u7684\u4e13\u5c5e\u94fe\u63a5\u586b\u5199\u6b63\u5f0f\u8ba2\u5355\u3002"); if (!text(state.order.contactValue)) add("contactValue", "\u8bf7\u7559\u4e0b\u63a5\u6536\u5236\u4f5c\u901a\u77e5\u7684\u8054\u7cfb\u65b9\u5f0f\u3002"); else if (!validContact(state.order.contactMethod, state.order.contactValue)) add("contactValue", "\u8fd9\u9879\u8054\u7cfb\u65b9\u5f0f\u770b\u8d77\u6765\u4e0d\u592a\u5b8c\u6574\uff0c\u8bf7\u68c0\u67e5\u540e\u518d\u8bd5\u3002"); if (!state.templateId) add("templateId", "\u8bf7\u5148\u9009\u62e9\u4e00\u5957\u9875\u9762\u6a21\u677f\u3002"); }
     if (step === 2) { if (!text(state.recipient.recipientName)) add("recipientName", "\u8bf7\u586b\u5199 TA \u7684\u6635\u79f0\u3002"); if (!validDate(state.recipient.birthday)) add("birthday", "\u8bf7\u586b\u5199\u6709\u6548\u7684\u751f\u65e5\u65e5\u671f\u3002"); if (!text(state.recipient.relationshipType)) add("relationshipType", "\u8bf7\u544a\u8bc9\u6211\u4eec\u4f60\u4eec\u7684\u5173\u7cfb\u3002"); if (!state.sender.senderAnonymous && !text(state.sender.senderName)) add("senderName", "\u4e0d\u533f\u540d\u65f6\uff0c\u8bf7\u7559\u4e0b\u9001\u793c\u4eba\u7684\u6635\u79f0\u3002"); }
-    if (step === 3) { if (!state.media.cover || state.media.cover.status !== "complete") add("cover", "\u8bf7\u5148\u5b8c\u6210\u5c01\u9762\u56fe\u4e0a\u4f20\u3002"); var complete = completeGalleryPhotos(); if (!complete.length) add("gallery", "\u8bf7\u81f3\u5c11\u4e0a\u4f20 1 \u5f20\u56de\u5fc6\u7167\u7247\u3002"); if (complete.length > plan.galleryLimit) add("gallery", "\u5f53\u524d\u8ba2\u5355\u6700\u591a " + plan.galleryLimit + " \u5f20\u56de\u5fc6\u7167\u7247\u3002"); if (state.media.gallery.some(function (photo) { return ["processing","uploading"].includes(photo.status); })) add("gallery", "\u8bf7\u7b49\u5f85\u6240\u6709\u6b63\u5728\u5904\u7406\u7684\u7167\u7247\u5b8c\u6210\u3002"); }
+    if (step === 3) { if (!state.media.cover || state.media.cover.status !== "complete") add("cover", "\u8bf7\u5148\u5b8c\u6210\u5c01\u9762\u56fe\u4e0a\u4f20\u3002"); var complete = completeGalleryPhotos(); if (!complete.length) add("gallery", "\u8bf7\u81f3\u5c11\u4e0a\u4f20 1 \u5f20\u56de\u5fc6\u7167\u7247\u3002"); if (hasGalleryLimit(plan) && complete.length > plan.galleryLimit) add("gallery", "\u5f53\u524d\u8ba2\u5355\u6700\u591a " + galleryLimitLabel(plan) + "\u56de\u5fc6\u7167\u7247\u3002"); if (state.media.gallery.some(function (photo) { return ["processing","uploading"].includes(photo.status); })) add("gallery", "\u8bf7\u7b49\u5f85\u6240\u6709\u6b63\u5728\u5904\u7406\u7684\u7167\u7247\u5b8c\u6210\u3002"); }
     if (step === 4) { if (!text(state.content.headline)) add("headline", "\u9996\u9875\u4e3b\u795d\u798f\u662f\u8fd9\u4efd\u793c\u7269\u7684\u5f00\u573a\uff0c\u8bf7\u5199\u4e0b\u4e00\u53e5\u3002"); else if (Array.from(state.content.headline).length > 15) add("headline", "\u9996\u9875\u4e3b\u795d\u798f\u4e0d\u80fd\u8d85\u8fc7 15 \u4e2a\u5b57\u3002"); else if (/[<>]/.test(state.content.headline)) add("headline", "\u4e3b\u795d\u798f\u91cc\u4e0d\u80fd\u5305\u542b\u7279\u6b8a\u6807\u7b7e\u7b26\u53f7\u3002"); }
-    if (step === 5) { if (state.activeModules.includes("surpriseBox")) { if (!state.modules.surpriseBox.imageryCode) add("modules", "\u60ca\u559c\u76f2\u76d2\u9700\u8981\u9009\u62e9\u4e00\u79cd\u610f\u8c61\u3002"); if (!text(state.modules.surpriseBox.surpriseMessage)) add("modules", "\u8bf7\u5199\u4e0b\u76f2\u76d2\u6253\u5f00\u65f6\u60f3\u8bf4\u7684\u4e00\u53e5\u8bdd\u3002"); } if (state.activeModules.includes("futureMailbox") && (!validDate(state.modules.futureMailbox.openDate) || !text(state.modules.futureMailbox.content))) add("modules", "\u672a\u6765\u4fe1\u7bb1\u9700\u8981\u6253\u5f00\u65e5\u671f\u548c\u4e00\u5c01\u4fe1\u3002"); if (state.activeModules.includes("wishBottle") && !text(state.modules.wishBottle.prompt)) add("modules", "\u8bb8\u613f\u74f6\u91cc\u8fd8\u6ca1\u6709\u653e\u5165\u4e00\u53e5\u5fc3\u613f\u3002"); }
+    if (step === 5) { if (state.activeModules.includes("futureMailbox") && (!validDate(state.modules.futureMailbox.openDate) || !text(state.modules.futureMailbox.content))) add("modules", "\u672a\u6765\u4fe1\u7bb1\u9700\u8981\u6253\u5f00\u65e5\u671f\u548c\u4e00\u5c01\u4fe1\u3002"); if (state.activeModules.includes("wishBottle") && !text(state.modules.wishBottle.prompt)) add("modules", "\u8bb8\u613f\u74f6\u91cc\u8fd8\u6ca1\u6709\u653e\u5165\u4e00\u53e5\u5fc3\u613f\u3002"); }
     if (step === 6 && !state.privacy.privacyConfirmed) add("privacyConfirmed", "\u8bf7\u4e3b\u52a8\u52fe\u9009\u5e76\u786e\u8ba4\u8fd9\u4efd\u6388\u6743\u8bf4\u660e\u3002");
     if (first && focus) focusError(first); return !first;
   }

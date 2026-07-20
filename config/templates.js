@@ -1,13 +1,26 @@
-window.BD_TEMPLATES = [
-  { id: "T01", name: "\u6674\u65e5\u624b\u7ed8", tags: ["\u6e05\u65b0", "\u6587\u827a", "\u624b\u7ed8"], description: "\u767d\u5e95\u660e\u4eae\u7ebf\u6761\u3001\u7c89\u84dd\u9ec4\u7eff\u3001\u9ad8\u7ea7\u624b\u7ed8\u611f", previewImage: "assets/templates/T01/preview.webp", fullPreviewImage: "assets/templates/T01/preview.png" },
-  { id: "T02", name: "Cherry Pop", tags: ["\u590d\u53e4", "\u6a31\u6843", "\u62fc\u8d34"], description: "\u660e\u4eae\u7f8e\u5f0f\u590d\u53e4\u3001\u6a31\u6843\u3001\u6495\u7eb8\u62fc\u8d34", previewImage: "assets/templates/T02/preview.webp", fullPreviewImage: "assets/templates/T02/preview.png" },
-  { id: "T03", name: "Love Letter", tags: ["\u6d77\u62a5", "\u624b\u4f5c", "\u6e29\u6696"], description: "\u7ea2\u84dd\u5976\u6cb9\u3001\u624b\u5de5\u62fc\u8d34\u3001\u7ed9\u597d\u53cb\u7684\u4e00\u5c01\u4fe1", previewImage: "assets/templates/T03/preview.webp", fullPreviewImage: "assets/templates/T03/preview.png" },
-  { id: "T04", name: "Blue Birthday Club", tags: ["\u5b9d\u84dd", "\u624b\u7ed8", "\u6d3b\u529b"], description: "\u5b9d\u84dd\u5e95\u3001\u53ef\u7231\u624b\u7ed8\u3001\u9ad8\u5bf9\u6bd4", previewImage: "assets/templates/T04/preview.webp", fullPreviewImage: "assets/templates/T04/preview.png" },
-  { id: "T05", name: "Today\u2019s Star", tags: ["\u7167\u7247\u4e3b\u89d2", "\u7c89\u5f69", "\u6d3e\u5bf9"], description: "\u7167\u7247\u4e3b\u89d2\u3001\u7c89\u5f69\u6d3e\u5bf9\u3001\u9ad8\u751f\u65e5\u611f", previewImage: "assets/templates/T05/preview.webp", fullPreviewImage: "assets/templates/T05/preview.png" },
-  { id: "T06", name: "Pink Midnight", tags: ["\u751c\u9177", "\u9ed1\u7c89", "\u661f\u591c"], description: "\u9ed1\u7c89\u6c34\u7c89\u3001\u602a\u8bde\u751c\u9177\u3001\u661f\u591c", previewImage: "assets/templates/T06/preview.webp", fullPreviewImage: "assets/templates/T06/preview.png" },
-  { id: "T07", name: "California Daydream", tags: ["\u65c5\u884c", "\u6d77\u6ee9", "\u590d\u53e4"], description: "\u52a0\u5dde\u5047\u65e5\u3001\u516c\u8def\u3001\u6d77\u6ee9\u3001\u677e\u5f1b\u611f", previewImage: "assets/templates/T07/preview.webp", fullPreviewImage: "assets/templates/T07/preview.png" },
-  { id: "T08", name: "Dear You", tags: ["\u7c89\u8272", "\u857e\u4e1d", "\u7eaa\u5ff5"], description: "\u7c89\u8272\u624b\u8d26\u3001\u857e\u4e1d\u3001\u7eb8\u5f20\u3001\u8774\u8776\u7ed3", previewImage: "assets/templates/T08/preview.webp", fullPreviewImage: "assets/templates/T08/preview.png" },
-  { id: "T09", name: "Summer Blue", tags: ["\u84dd\u767d", "\u6d77\u6ee8", "\u6cbb\u6108"], description: "\u84dd\u767d\u6d77\u6ee8\u3001\u590f\u65e5\u3001\u6cbb\u6108\u6c34\u5f69", previewImage: "assets/templates/T09/preview.webp", fullPreviewImage: "assets/templates/T09/preview.png" },
-  { id: "T10", name: "Birthday Rush", tags: ["\u9ad8\u9971\u548c", "\u793c\u7269", "\u4eea\u5f0f\u611f"], description: "\u9ad8\u9971\u548c\u751f\u65e5\u6d3e\u5bf9\u3001\u793c\u7269\u5305\u56f4\u611f", previewImage: "assets/templates/T10/preview.webp", fullPreviewImage: "assets/templates/T10/preview.png" },
-  { id: "T11", name: "Love Graffiti", tags: ["\u6d82\u9e26", "\u8857\u5934", "\u4e2a\u6027"], description: "\u8367\u5149\u6d82\u9e26\u3001\u8857\u5934\u3001\u9ed1\u7ebf\u3001\u5f3a\u4e2a\u6027", previewImage: "assets/templates/T11/preview.webp", fullPreviewImage: "assets/templates/T11/preview.png" }
-];
+(function () {
+  "use strict";
+
+  var assets = Array.isArray(window.BD_TEMPLATE_ASSETS) ? window.BD_TEMPLATE_ASSETS : [];
+  var fallback = [
+    { legacyId: "T01", templateId: "line_bloom_white", name: "\u6674\u65e5\u624b\u7ed8", description: "\u6e05\u65b0\u624b\u7ed8\u98ce\u7684\u751f\u65e5\u795d\u798f\u3002", previewThumbImage: "assets/templates/T01/preview.webp", previewCoverImage: "assets/templates/T01/preview.png", category: "line_art", suitableFor: "\u6e05\u65b0\u795d\u798f" }
+  ];
+  var source = assets.length ? assets : fallback;
+
+  window.BD_TEMPLATES = source.map(function (asset) {
+    return {
+      id: asset.legacyId || asset.code,
+      assetId: asset.templateId || asset.legacyId || asset.code,
+      name: asset.name || asset.templateName || asset.legacyId,
+      category: asset.category || "birthday",
+      tags: Array.isArray(asset.decorElements) ? asset.decorElements : [],
+      description: asset.description || "\u4e3a TA \u51c6\u5907\u7684\u751f\u65e5\u9875\u9762\u3002",
+      suitableFor: asset.suitableFor || "\u751f\u65e5\u795d\u798f",
+      version: asset.version || "1.0.0",
+      premium: Boolean(asset.isPremiumTemplate),
+      palette: asset.palette || {},
+      previewImage: asset.previewThumbImage || asset.previewCoverImage,
+      fullPreviewImage: asset.previewCoverImage || asset.previewThumbImage
+    };
+  });
+})();

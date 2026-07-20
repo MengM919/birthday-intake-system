@@ -95,7 +95,7 @@ img { display: block; max-width: 100%; }
 .section-label h3 { margin: 0; font-size: 18px; }
 .section-label p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
 
-.template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .template-card { position: relative; min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #fffdf9; text-align: left; color: inherit; padding: 0; }
 .template-card.selected { border: 2px solid var(--rose); box-shadow: 0 0 0 3px rgba(221, 110, 123, 0.12); }
 .template-card[disabled] { cursor: default; }
@@ -153,7 +153,7 @@ img { display: block; max-width: 100%; }
 .blessing-candidate span { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; line-height: 1.45; }
 .blessing-candidate button { border: 1px solid #e3bdc4; border-radius: 5px; background: #fff; color: #b44958; padding: 6px 8px; font-size: 12px; font-weight: 800; }
 
-.module-grid { display: grid; gap: 10px; }
+.module-grid { display: grid; gap: 16px; margin-top: 4px; }
 .module-card { position: relative; min-height: 118px; border: 1px solid var(--line); border-radius: 8px; background: #fffdf9; padding: 15px; }
 .module-card.required { background: #f6fbf8; border-color: #c8ded4; }
 .module-card.locked { background: #f9f6f1; }
@@ -162,7 +162,7 @@ img { display: block; max-width: 100%; }
 .module-card button { border: 1px solid #d7c8bd; border-radius: 5px; background: #fff; color: var(--ink); padding: 7px 9px; font-size: 12px; font-weight: 800; }
 .module-card.enabled button { border-color: #93c4b2; background: #eff8f4; color: #2f7963; }
 .module-card .included-tag { position: absolute; top: 12px; right: 12px; color: var(--mint); font-size: 11px; font-weight: 900; }
-.module-fields { display: grid; gap: 16px; margin-top: 16px; }
+.module-fields { display: grid; gap: 18px; margin-top: 22px; }
 .module-config { padding-top: 16px; border-top: 1px solid var(--line); }
 .module-config-head h3 { margin: 0; font-size: 19px; }
 .module-config-head p { margin: 6px 0 14px; color: var(--muted); font-size: 13px; line-height: 1.55; }

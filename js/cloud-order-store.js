@@ -46,6 +46,12 @@
     var display = { displayName: moduleDisplayName(code) };
     if (code === "bgm") return Object.assign(display, { enabled: true, track: "the_walters_i_love_you_so" });
     if (code === "countdown") return Object.assign(display, { birthday: snapshot.recipient && snapshot.recipient.birthday || null });
+    if (code === "surpriseBox") return Object.assign(display, {
+      displayName: "\u60ca\u559c\u76f2\u76d2",
+      sceneMode: "random_immersive",
+      scenePoolVersion: "v1",
+      revealStyle: "gift_box"
+    });
     return Object.assign(display, (snapshot.modules && snapshot.modules[code]) || {});
   }
   async function claimOrder(orderNumber, token) {

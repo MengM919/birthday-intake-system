@@ -1,10 +1,26 @@
-window.BD_IMAGERY = [
-  { id: "kitten", name: "\u5c0f\u732b", short: "\u51e0\u53ea\u5c0f\u732b\u5077\u5077\u6765\u966a TA \u8fc7\u751f\u65e5\u3002", preview: "assets/imagery/kitten/preview.webp", defaultDuration: 6, renderer: "kittenRenderer" },
-  { id: "fireworks", name: "\u70df\u82b1", short: "\u8ba9\u6574\u4e2a\u9875\u9762\u4e3a TA \u76db\u5927\u7efd\u653e\u3002", preview: "assets/imagery/fireworks/preview.webp", defaultDuration: 6, renderer: "fireworksRenderer" },
-  { id: "flowers", name: "\u9c9c\u82b1", short: "\u8ba9\u9c9c\u82b1\u4ece\u9875\u9762\u56db\u5468\u6162\u6162\u628a TA \u5305\u56f4\u3002", preview: "assets/imagery/flowers/preview.webp", defaultDuration: 7, renderer: "flowersRenderer" },
-  { id: "stars", name: "\u661f\u661f", short: "\u4eca\u665a\u6240\u6709\u661f\u5149\u90fd\u843d\u5411 TA\u3002", preview: "assets/imagery/stars/preview.webp", defaultDuration: 6, renderer: "starsRenderer" },
-  { id: "butterflies", name: "\u8774\u8776", short: "\u51e0\u53ea\u8774\u8776\u8f7b\u8f7b\u98de\u8fc7\uff0c\u50cf\u795d\u798f\u62b5\u8fbe\u3002", preview: "assets/imagery/butterflies/preview.webp", defaultDuration: 7, renderer: "butterfliesRenderer" },
-  { id: "balloons", name: "\u751f\u65e5\u6c14\u7403", short: "\u9ad8\u8d28\u611f\u6c14\u7403\u548c\u4e1d\u5e26\u6162\u6162\u5347\u8d77\u3002", preview: "assets/imagery/balloons/preview.webp", defaultDuration: 6, renderer: "balloonsRenderer" },
-  { id: "ocean", name: "\u6d77\u6d6a", short: "\u590f\u65e5\u6d77\u6d6a\u3001\u5149\u5f71\u548c\u6cbb\u6108\u6c14\u6ce1\u6d8c\u6765\u3002", preview: "assets/imagery/ocean/preview.webp", defaultDuration: 7, renderer: "oceanRenderer" },
-  { id: "petals", name: "\u82b1\u74e3\u96e8", short: "\u5c11\u91cf\u82b1\u74e3\u6162\u6162\u843d\u4e0b\uff0c\u6e29\u67d4\u53c8\u7eaa\u5ff5\u3002", preview: "assets/imagery/petals/preview.webp", defaultDuration: 6, renderer: "petalsRenderer" }
-];
+(function () {
+  "use strict";
+
+  var scenes = Array.isArray(window.BD_BLINDBOX_SCENES) ? window.BD_BLINDBOX_SCENES : [];
+  var legacyMap = {
+    kitten: "kitten_companion",
+    fireworks: "firework_night",
+    flowers: "flower_bouquet",
+    stars: "starlight_wish",
+    butterflies: "flower_bouquet",
+    balloons: "party_balloons",
+    ocean: "seaside_summer",
+    petals: "flower_bouquet"
+  };
+
+  window.BD_IMAGERY_COMPAT = legacyMap;
+  window.BD_IMAGERY = scenes.map(function (scene) {
+    return {
+      id: scene.id,
+      name: scene.name,
+      short: scene.message,
+      defaultDuration: scene.duration,
+      renderer: "immersiveGiftBoxRenderer"
+    };
+  });
+})();
