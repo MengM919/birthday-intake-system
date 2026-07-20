@@ -349,9 +349,15 @@
       var data = await window.BirthdayDailyLuck.getDailyLuck(birthday);
       var horoscope = data.horoscope;
       var almanac = data.almanac;
+      var horoscopeSource = data.sources && data.sources.horoscope;
       var cards = [];
       if (horoscope) {
-        cards.push('<article class="luck-card"><span>\u661f\u8c61\u5c0f\u63d0\u793a</span><strong>' + escapeHtml(horoscope.summary || "\u4eca\u5929\u4e5f\u662f\u503c\u5f97\u4f60\u76f8\u4fe1\u81ea\u5df1\u7684\u4e00\u5929\u3002") + '</strong><small>\u5e78\u8fd0\u8272\uff1a' + escapeHtml(horoscope.luckyColor || "\u6682\u65e0") + ' \u00b7 \u5e78\u8fd0\u6570\u5b57\uff1a' + escapeHtml(horoscope.luckyNumber || "\u6682\u65e0") + '</small></article>');
+        var luckDetails = [];
+        if (horoscope.type) luckDetails.push("\u8fd0\u52bf\u7c7b\u578b\uff1a" + horoscope.type);
+        if (horoscope.luckyColor) luckDetails.push("\u5e78\u8fd0\u8272\uff1a" + horoscope.luckyColor);
+        if (horoscope.luckyNumber) luckDetails.push("\u5e78\u8fd0\u6570\u5b57\uff1a" + horoscope.luckyNumber);
+        if (horoscopeSource) luckDetails.push("\u6570\u636e\uff1a" + horoscopeSource);
+        cards.push('<article class="luck-card"><span>\u661f\u8c61\u5c0f\u63d0\u793a</span><strong>' + escapeHtml(horoscope.summary || "\u4eca\u5929\u7684\u661f\u8c61\u6b63\u5728\u7ed9\u4f60\u9001\u4e0a\u4e00\u4efd\u8f7b\u8f7b\u7684\u795d\u798f\u3002") + '</strong><small>' + escapeHtml(luckDetails.join(" \u00b7 ") || "\u4ec5\u4f9b\u5a31\u4e50\u53c2\u8003") + '</small></article>');
       }
       if (almanac) {
         cards.push('<article class="luck-card"><span>\u4eca\u65e5\u5c0f\u5b9c\u5fcc</span><strong>\u5b9c\uff1a' + escapeHtml(almanac.suitable || "\u628a\u5feb\u4e50\u6536\u4e0b") + '</strong><small>\u5fcc\uff1a' + escapeHtml(almanac.avoid || "\u5bf9\u81ea\u5df1\u592a\u4e0d\u5ba2\u6c14") + '</small></article>');

@@ -90,7 +90,7 @@ async function cached(
     .maybeSingle();
 
   if (error) throw new Error("今日好运服务暂时不可用，请稍后再试。");
-  if (cache && new Date(cache.expires_at).getTime() > Date.now()) return cache;
+  if (cache && new Date(cache.expires_at).getTime() > Date.now() && cacheIsUsable(kind, cache.payload)) return cache;
 
   const payload = await loader();
   const sourceName = kind === "horoscope" ? "TianAPI" : "Juhe";
@@ -128,21 +128,80 @@ async function loadHoroscope(zodiac: string, date: string) {
 
   const raw = await response.json();
   if (Number(raw.code) !== 200 || !raw.result) throw new Error("今日好运服务暂时不可用，请稍后再试。");
-  const result = raw.result;
+  const normalized = normalizeHoroscope(raw.result, zodiac, date);
+  if (!normalized.summary) throw new Error("星座服务没有返回可展示的内容。");
+  return normalized;
+}
+
+function cacheIsUsable(kind: "horoscope" | "almanac", payload: unknown) {
+  if (kind !== "horoscope") return true;
+  const value = asRecord(payload);
+  return Boolean(textValue(value.summary) || textValue(value.content));
+}
+
+function normalizeHoroscope(rawResult: unknown, zodiac: string, date: string) {
+  const root = asRecord(rawResult);
+  const records = horoscopeRecords(rawResult);
+  const primary = records.find((record) => Boolean(contentOf(record))) || root;
+  const summary = contentOf(primary) || contentOf(root) || typedContent(records, ["今日", "概述", "综合", "总运", "运势"]);
 
   return {
-    astro: String(result.astro || zodiac),
+    astro: firstText(primary, ["astro", "constellation", "star"]) || zodiac,
     date,
-    summary: String(result.summary || result.content || result.all || ""),
-    love: String(result.love || result.love_index || result.loveIndex || ""),
-    work: String(result.work || result.career || result.work_index || result.workIndex || ""),
-    money: String(result.money || result.wealth || result.money_index || result.moneyIndex || ""),
-    health: String(result.health || result.health_index || result.healthIndex || ""),
-    luckyColor: String(result.luckycolor || result.lucky_color || result.color || result.luckyColor || ""),
-    luckyNumber: String(result.number || result.luckynumber || result.lucky_number || result.luckyNumber || "")
+    type: firstText(primary, ["type", "title", "name", "label"]) || "今日星象",
+    summary,
+    love: firstText(primary, ["love", "love_index", "loveIndex"]) || typedContent(records, ["爱情", "感情"]),
+    work: firstText(primary, ["work", "career", "work_index", "workIndex"]) || typedContent(records, ["工作", "事业"]),
+    money: firstText(primary, ["money", "wealth", "money_index", "moneyIndex"]) || typedContent(records, ["财运", "财富"]),
+    health: firstText(primary, ["health", "health_index", "healthIndex"]) || typedContent(records, ["健康"]),
+    luckyColor: firstText(primary, ["luckycolor", "lucky_color", "color", "luckyColor"]) || typedContent(records, ["幸运色", "颜色"]),
+    luckyNumber: firstText(primary, ["number", "luckynumber", "lucky_number", "luckyNumber"]) || typedContent(records, ["幸运数字", "数字"])
   };
 }
 
+function horoscopeRecords(value: unknown) {
+  if (Array.isArray(value)) return value.map(asRecord).filter(hasValues);
+  const root = asRecord(value);
+  for (const key of ["list", "items", "data", "results"]) {
+    if (Array.isArray(root[key])) return (root[key] as unknown[]).map(asRecord).filter(hasValues);
+  }
+  return hasValues(root) ? [root] : [];
+}
+
+function typedContent(records: Record<string, unknown>[], terms: string[]) {
+  for (const record of records) {
+    const type = firstText(record, ["type", "title", "name", "label"]);
+    if (terms.some((term) => type.includes(term))) {
+      const content = contentOf(record);
+      if (content) return content;
+    }
+  }
+  return "";
+}
+
+function contentOf(record: Record<string, unknown>) {
+  return firstText(record, ["summary", "content", "all", "description", "desc", "text", "value"]);
+}
+
+function firstText(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = textValue(record[key]);
+    if (value) return value;
+  }
+  return "";
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function hasValues(value: Record<string, unknown>) {
+  return Object.keys(value).length > 0;
+}
+
+function textValue(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? String(value).trim() : "";
+}
 async function loadAlmanac(date: string) {
   const key = Deno.env.get("JUHE_ALMANAC_KEY");
   if (!key) throw new Error("今日好运服务暂时不可用，请稍后再试。");
